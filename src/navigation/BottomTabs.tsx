@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import { AccountsScreen } from '../features/accounts/AccountsScreen';
 
 // Placeholder screens for Phase 2
 const PlaceholderScreen = ({ name }: { name: string }) => (
@@ -12,7 +13,6 @@ const PlaceholderScreen = ({ name }: { name: string }) => (
 );
 
 const Dashboard = () => <PlaceholderScreen name="Dashboard" />;
-const Accounts = () => <PlaceholderScreen name="Accounts" />;
 const Transactions = () => <PlaceholderScreen name="Transactions" />;
 const Budgets = () => <PlaceholderScreen name="Budgets" />;
 const Vaults = () => <PlaceholderScreen name="Vaults" />;
@@ -46,7 +46,7 @@ export const BottomTabs = () => {
       })}
     >
       <Tab.Screen name="Dashboard" component={Dashboard} />
-      <Tab.Screen name="Accounts" component={Accounts} />
+      <Tab.Screen name="Accounts" component={AccountsScreen} />
       <Tab.Screen name="Transactions" component={Transactions} />
       <Tab.Screen name="Budgets" component={Budgets} />
       <Tab.Screen name="Vaults" component={Vaults} />
