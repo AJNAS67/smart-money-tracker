@@ -11,6 +11,8 @@ interface FinanceState {
   refreshAccounts: () => void;
   refreshTransactions: () => void;
   addAccount: (account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateAccount: (id: string, updates: Partial<Omit<Account, 'id' | 'createdAt' | 'updatedAt'>>) => void;
+  deleteAccount: (id: string) => void;
   addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => void;
 }
 
@@ -32,6 +34,16 @@ export const useStore = create<FinanceState>((set, get) => ({
 
   addAccount: (account) => {
     AccountRepository.create(account);
+    get().refreshAccounts();
+  },
+
+  updateAccount: (id, updates) => {
+    AccountRepository.update(id, updates);
+    get().refreshAccounts();
+  },
+
+  deleteAccount: (id) => {
+    AccountRepository.delete(id);
     get().refreshAccounts();
   },
 

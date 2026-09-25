@@ -49,18 +49,18 @@ Following a strictly modular approach, we will build, test, and commit each phas
 
 ---
 
-## 💳 Phase 3: Accounts Module (🔄 Next)
+## 💳 Phase 3: Accounts Module (✅ Complete)
 **Description:** Managing where the money lives (Cash, Bank, Credit Cards) and tracking total net worth.
 
-- [ ] **UI:** Accounts List Screen showing balances
-- [ ] **UI:** Add/Edit Account Form (Name, Type, Balance, Icon, Color)
-- [ ] **Logic:** Insert/Update account in SQLite and refresh Zustand state
-- [ ] **Logic:** Calculate total net worth dynamically based on accounts
+- [x] **UI:** Accounts List Screen showing balances
+- [x] **UI:** Add/Edit Account Form (Name, Type, Balance, Icon, Color)
+- [x] **Logic:** Insert/Update account in SQLite and refresh Zustand state
+- [x] **Logic:** Calculate total net worth dynamically based on accounts
 > **Git Commit:** `feat(accounts): implement account management`
 
 ---
 
-## 💸 Phase 4: Transactions Module
+## 💸 Phase 4: Transactions Module (🔄 Next)
 **Description:** The core engine for tracking income, expenses, and transfers.
 
 - [ ] **Logic:** Seed database with default Categories (Food, Transport, Salary, etc.)
