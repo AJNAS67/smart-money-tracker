@@ -81,13 +81,13 @@ Following a strictly modular approach, we will build, test, and commit each phas
 
 ---
 
-## 🎯 Phase 6: Budgets Module (🔄 Next)
+## 🎯 Phase 6: Budgets Module (✅ Complete)
 **Description:** Helping the user control their spending dynamically.
 
-- [ ] **UI:** Budgets Screen (List of active budgets with visual progress bars)
-- [ ] **UI:** Add/Edit Budget Form (Category, Limit Amount, Period)
-- [ ] **Logic:** Calculate budget usage in real-time based on actual transactions
-- [ ] **UI:** Visual warnings/alerts when budget exceeds 80% or 100%
+- [x] **UI:** Budgets Screen (List of active budgets with visual progress bars)
+- [x] **UI:** Add/Edit Budget Form (Category, Limit Amount, Period)
+- [x] **Logic:** Calculate budget usage in real-time based on actual transactions
+- [x] **UI:** Visual warnings/alerts when budget exceeds 80% or 100%
 > **Git Commit:** `feat(budgets): implement budget tracking`
 
 ---

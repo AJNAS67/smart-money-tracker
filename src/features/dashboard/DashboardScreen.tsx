@@ -8,7 +8,6 @@ import { GlassCard } from '../../components/glass/GlassCard';
 import { colors } from '../../theme/colors';
 import { Transaction } from '../../database/schema';
 import { PolarChart, Pie, CartesianChart, Bar } from 'victory-native';
-import { useFont } from '@shopify/react-native-skia';
 
 const { width } = Dimensions.get('window');
 
@@ -72,9 +71,7 @@ export const DashboardScreen = () => {
     : [{ value: 1, color: 'rgba(255,255,255,0.1)', label: 'No Data' }];
 
   // Income vs Expense for the last 6 months
-  const chartFont = useFont(require('../../assets/fonts/Inter-Regular.ttf'), 12);
-  // Note: Assuming Inter-Regular.ttf is in assets/fonts. If not, skia might use a default font if we pass null, but useFont requires a valid font or it returns null.
-  // Actually, to avoid crash if font doesn't exist, we can just skip text or rely on default if available.
+  // Note: Skia requires a custom .ttf font file for axis labels. Since we don't have one, we will render the chart without axis labels for now.
   
   const barData = [
     { month: 'Jan', income: 4000, expense: 2500 },
@@ -194,9 +191,7 @@ export const DashboardScreen = () => {
             yKeys={["income", "expense"]}
             domainPadding={{ left: 20, right: 20 }}
             axisOptions={{
-              font: chartFont,
               tickCount: 4,
-              labelColor: colors.textMuted,
               lineColor: 'rgba(255,255,255,0.1)',
             }}
           >

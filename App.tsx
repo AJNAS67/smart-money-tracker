@@ -2,7 +2,7 @@ import './global.css';
 import { StatusBar } from 'expo-status-bar';
 import { RootNavigator } from './src/navigation';
 import { useEffect, useState } from 'react';
-import { initDatabase } from './src/database';
+import { initDatabase, CategoryRepository } from './src/database';
 import { View, Text } from 'react-native';
 import { colors } from './src/theme/colors';
 
@@ -13,6 +13,7 @@ export default function App() {
     const setup = async () => {
       try {
         await initDatabase();
+        CategoryRepository.seedDefaults();
         setDbInitialized(true);
       } catch (e) {
         console.error(e);
