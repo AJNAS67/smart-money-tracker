@@ -38,18 +38,18 @@ Following a strictly modular approach, we will build, test, and commit each phas
 
 ---
 
-## 💾 Phase 2: Database & State Foundation (🔄 Next)
+## 💾 Phase 2: Database & State Foundation (✅ Complete)
 **Description:** Setting up the robust offline-first SQLite database architecture and connecting it to Zustand.
 
-- [ ] Define SQLite database schema (Accounts, Transactions, Categories, Budgets, Vaults)
-- [ ] Create Database initialization & migration scripts (`src/database/database.ts`)
-- [ ] Create Repositories (CRUD operations) for `Accounts` and `Transactions`
-- [ ] Setup global Zustand store to sync state with SQLite
+- [x] Define SQLite database schema (Accounts, Transactions, Categories, Budgets, Vaults)
+- [x] Create Database initialization & migration scripts (`src/database/database.ts`)
+- [x] Create Repositories (CRUD operations) for `Accounts` and `Transactions`
+- [x] Setup global Zustand store to sync state with SQLite
 > **Git Commit:** `feat(database): implement SQLite architecture and schema`
 
 ---
 
-## 💳 Phase 3: Accounts Module
+## 💳 Phase 3: Accounts Module (🔄 Next)
 **Description:** Managing where the money lives (Cash, Bank, Credit Cards) and tracking total net worth.
 
 - [ ] **UI:** Accounts List Screen showing balances
