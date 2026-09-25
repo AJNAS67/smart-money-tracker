@@ -3,6 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { BottomTabs } from './BottomTabs';
 import { AddAccountScreen } from '../features/accounts/AddAccountScreen';
+import { AddTransactionScreen } from '../features/transactions/AddTransactionScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -12,6 +13,7 @@ export const RootNavigator = () => {
       <Stack.Navigator screenOptions={{ headerShown: false, presentation: 'modal' }}>
         <Stack.Screen name="MainTabs" component={BottomTabs} />
         <Stack.Screen name="AddAccount" component={AddAccountScreen} />
+        <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

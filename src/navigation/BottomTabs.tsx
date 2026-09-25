@@ -4,6 +4,8 @@ import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { AccountsScreen } from '../features/accounts/AccountsScreen';
+import { TransactionsScreen } from '../features/transactions/TransactionsScreen';
+import { DashboardScreen } from '../features/dashboard/DashboardScreen';
 
 // Placeholder screens for Phase 2
 const PlaceholderScreen = ({ name }: { name: string }) => (
@@ -12,8 +14,6 @@ const PlaceholderScreen = ({ name }: { name: string }) => (
   </View>
 );
 
-const Dashboard = () => <PlaceholderScreen name="Dashboard" />;
-const Transactions = () => <PlaceholderScreen name="Transactions" />;
 const Budgets = () => <PlaceholderScreen name="Budgets" />;
 const Vaults = () => <PlaceholderScreen name="Vaults" />;
 
@@ -45,9 +45,9 @@ export const BottomTabs = () => {
         },
       })}
     >
-      <Tab.Screen name="Dashboard" component={Dashboard} />
+      <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Accounts" component={AccountsScreen} />
-      <Tab.Screen name="Transactions" component={Transactions} />
+      <Tab.Screen name="Transactions" component={TransactionsScreen} />
       <Tab.Screen name="Budgets" component={Budgets} />
       <Tab.Screen name="Vaults" component={Vaults} />
     </Tab.Navigator>

@@ -60,28 +60,28 @@ Following a strictly modular approach, we will build, test, and commit each phas
 
 ---
 
-## 💸 Phase 4: Transactions Module (🔄 Next)
+## 💸 Phase 4: Transactions Module (✅ Complete)
 **Description:** The core engine for tracking income, expenses, and transfers.
 
-- [ ] **Logic:** Seed database with default Categories (Food, Transport, Salary, etc.)
-- [ ] **UI:** Transaction List Screen with filtering (by Date, Category, Account)
-- [ ] **UI:** Add/Edit Transaction Form (Amount, Type, Category, Account, Date, Note)
-- [ ] **Logic:** Automatically adjust Account balances when transactions are added/edited/deleted
+- [x] **Logic:** Seed database with default Categories (Food, Transport, Salary, etc.)
+- [x] **UI:** Transaction List Screen with filtering (by Date, Category, Account)
+- [x] **UI:** Add/Edit Transaction Form (Amount, Type, Category, Account, Date, Note)
+- [x] **Logic:** Automatically adjust Account balances when transactions are added/edited/deleted
 > **Git Commit:** `feat(transactions): implement transaction management`
 
 ---
 
-## 📊 Phase 5: Dashboard & Analytics
+## 📊 Phase 5: Dashboard & Analytics (✅ Complete)
 **Description:** The home screen giving a powerful financial overview and insights.
 
-- [ ] **UI:** Dashboard Screen layout (Total Balance Card, Recent Transactions)
-- [ ] **Charts:** Expense breakdown by category (Pie/Donut Chart using `victory-native`)
-- [ ] **Charts:** Income vs Expense over time (Bar/Line Chart)
+- [x] **UI:** Dashboard Screen layout (Total Balance Card, Recent Transactions)
+- [x] **Charts:** Expense breakdown by category (Pie/Donut Chart using `victory-native`)
+- [x] **Charts:** Income vs Expense over time (Bar/Line Chart)
 > **Git Commit:** `feat(dashboard): implement finance dashboard and analytics`
 
 ---
 
-## 🎯 Phase 6: Budgets Module
+## 🎯 Phase 6: Budgets Module (🔄 Next)
 **Description:** Helping the user control their spending dynamically.
 
 - [ ] **UI:** Budgets Screen (List of active budgets with visual progress bars)

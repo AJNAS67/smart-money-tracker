@@ -1,4 +1,5 @@
 import * as SQLite from 'expo-sqlite';
+import { CategoryRepository } from './repositories/CategoryRepository';
 
 // Open the database synchronously
 export const db = SQLite.openDatabaseSync('moneyflow.db');
@@ -62,6 +63,8 @@ export const initDatabase = async () => {
         updatedAt INTEGER NOT NULL
       );
     `);
+    
+    CategoryRepository.seedDefaults();
     
     console.log('Database initialized successfully');
   } catch (error) {

@@ -6,56 +6,71 @@ import { useStore } from '../../store/useStore';
 import { Typography } from '../../components/common/Typography';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { colors } from '../../theme/colors';
-import { Account } from '../../database/schema';
+import { Transaction } from '../../database/schema';
 
-export const AccountsScreen = () => {
-  const { accounts, totalBalance, refreshAccounts } = useStore();
+export const TransactionsScreen = () => {
+  const { transactions, categories, accounts, refreshTransactions, refreshCategories, deleteTransaction } = useStore();
   const navigation = useNavigation<any>();
 
   useEffect(() => {
-    refreshAccounts();
+    refreshTransactions();
+    refreshCategories();
   }, []);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
-    }).format(amount);
+    }).format(Math.abs(amount));
   };
 
-  const renderAccount = ({ item }: { item: Account }) => (
-    <GlassCard style={styles.accountCard}>
-      <View style={styles.accountIconContainer}>
-        <Ionicons name={(item.icon as any) || 'wallet'} size={24} color={item.color || colors.primary} />
-      </View>
-      <View style={styles.accountInfo}>
-        <Typography variant="subtitle" style={{ color: colors.text }}>{item.name}</Typography>
-        <Typography variant="caption">{item.type}</Typography>
-      </View>
-      <View style={styles.accountBalance}>
-        <Typography variant="subtitle" align="right">{formatCurrency(item.balance)}</Typography>
-      </View>
-    </GlassCard>
-  );
+  const renderTransaction = ({ item }: { item: Transaction }) => {
+    const category = categories.find(c => c.id === item.categoryId);
+    const account = accounts.find(a => a.id === item.accountId);
+    const isIncome = item.type === 'INCOME';
+
+    return (
+      <GlassCard style={styles.transactionCard}>
+        <View style={[styles.iconContainer, { backgroundColor: category?.color || colors.primary }]}>
+          <Ionicons name={(category?.icon as any) || 'cash-outline'} size={24} color={colors.white} />
+        </View>
+        <View style={styles.infoContainer}>
+          <Typography variant="subtitle" style={{ color: colors.text }}>
+            {category?.name || 'Uncategorized'}
+          </Typography>
+          <Typography variant="caption" style={{ color: colors.textMuted }}>
+            {account?.name} • {new Date(item.date).toLocaleDateString()}
+          </Typography>
+        </View>
+        <View style={styles.amountContainer}>
+          <Typography variant="subtitle" style={{ color: isIncome ? colors.success : colors.danger }}>
+            {isIncome ? '+' : '-'}{formatCurrency(item.amount)}
+          </Typography>
+          <TouchableOpacity onPress={() => deleteTransaction(item.id)} style={styles.deleteButton}>
+            <Ionicons name="trash-outline" size={16} color={colors.danger} />
+          </TouchableOpacity>
+        </View>
+      </GlassCard>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Typography variant="caption">Total Net Worth</Typography>
-        <Typography variant="h1" color={colors.primary}>{formatCurrency(totalBalance)}</Typography>
+        <Typography variant="h2" color={colors.white}>Transactions</Typography>
       </View>
 
       <FlatList
-        data={accounts}
+        data={transactions}
         keyExtractor={(item) => item.id}
-        renderItem={renderAccount}
+        renderItem={renderTransaction}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Ionicons name="wallet-outline" size={48} color={colors.textMuted} />
-            <Typography variant="subtitle" style={{ marginTop: 16 }}>No accounts yet</Typography>
+            <Ionicons name="receipt-outline" size={48} color={colors.textMuted} />
+            <Typography variant="subtitle" style={{ marginTop: 16 }}>No transactions yet</Typography>
             <Typography variant="caption" align="center" style={{ marginTop: 8 }}>
-              Add an account to start tracking your net worth.
+              Add a transaction to start tracking your expenses and income.
             </Typography>
           </View>
         }
@@ -63,7 +78,7 @@ export const AccountsScreen = () => {
 
       <TouchableOpacity
         style={styles.fab}
-        onPress={() => navigation.navigate('AddAccount')}
+        onPress={() => navigation.navigate('AddTransaction')}
       >
         <Ionicons name="add" size={32} color={colors.white} />
       </TouchableOpacity>
@@ -86,26 +101,29 @@ const styles = StyleSheet.create({
   listContainer: {
     padding: 16,
   },
-  accountCard: {
+  transactionCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     marginBottom: 12,
   },
-  accountIconContainer: {
+  iconContainer: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.05)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
   },
-  accountInfo: {
+  infoContainer: {
     flex: 1,
   },
-  accountBalance: {
+  amountContainer: {
     alignItems: 'flex-end',
+  },
+  deleteButton: {
+    marginTop: 4,
+    padding: 4,
   },
   emptyState: {
     alignItems: 'center',

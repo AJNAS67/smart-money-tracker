@@ -1,4 +1,4 @@
-export type AccountType = 'CASH' | 'BANK' | 'CREDIT_CARD' | 'INVESTMENT';
+export type AccountType = string;
 export type TransactionType = 'INCOME' | 'EXPENSE' | 'TRANSFER';
 
 export interface Account {

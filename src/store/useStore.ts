@@ -1,23 +1,27 @@
 import { create } from 'zustand';
-import { Account, Transaction } from '../database/schema';
-import { AccountRepository, TransactionRepository } from '../database';
+import { Account, Transaction, Category } from '../database/schema';
+import { AccountRepository, TransactionRepository, CategoryRepository } from '../database';
 
 interface FinanceState {
   accounts: Account[];
+  categories: Category[];
   transactions: Transaction[];
   totalBalance: number;
   
   // Actions
   refreshAccounts: () => void;
   refreshTransactions: () => void;
+  refreshCategories: () => void;
   addAccount: (account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>) => void;
   updateAccount: (id: string, updates: Partial<Omit<Account, 'id' | 'createdAt' | 'updatedAt'>>) => void;
   deleteAccount: (id: string) => void;
   addTransaction: (transaction: Omit<Transaction, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  deleteTransaction: (id: string) => void;
 }
 
 export const useStore = create<FinanceState>((set, get) => ({
   accounts: [],
+  categories: [],
   transactions: [],
   totalBalance: 0,
 
@@ -30,6 +34,11 @@ export const useStore = create<FinanceState>((set, get) => ({
   refreshTransactions: () => {
     const transactions = TransactionRepository.getAll();
     set({ transactions });
+  },
+
+  refreshCategories: () => {
+    const categories = CategoryRepository.getAll();
+    set({ categories });
   },
 
   addAccount: (account) => {
@@ -51,6 +60,12 @@ export const useStore = create<FinanceState>((set, get) => ({
     TransactionRepository.create(transaction);
     get().refreshTransactions();
     // Balance might have changed, refresh accounts too
+    get().refreshAccounts();
+  },
+
+  deleteTransaction: (id) => {
+    TransactionRepository.delete(id);
+    get().refreshTransactions();
     get().refreshAccounts();
   },
 }));
