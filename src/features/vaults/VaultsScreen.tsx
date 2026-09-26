@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, FlatList, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../../store/useStore';
@@ -7,7 +8,6 @@ import { Typography } from '../../components/common/Typography';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { colors } from '../../theme/colors';
 import { Vault } from '../../database/schema';
-import { PolarChart, Pie } from 'victory-native';
 
 const { width } = Dimensions.get('window');
 
@@ -33,49 +33,46 @@ export const VaultsScreen = () => {
     const remaining = item.targetAmount - item.currentAmount;
     const vaultColor = item.color || colors.primary;
 
-    const pieData = [
-      { value: progress, color: vaultColor },
-      { value: 1 - progress, color: 'rgba(255,255,255,0.1)' }
-    ];
-
     return (
-      <GlassCard style={styles.vaultCard}>
-        <View style={styles.vaultHeader}>
-          <Typography variant="subtitle" style={{ color: colors.white }}>{item.name}</Typography>
-        </View>
-
-        <View style={styles.chartContainer}>
-          <View style={styles.chartWrapper}>
-            <PolarChart
-              data={pieData}
-              colorKey={"color"}
-              valueKey={"value"}
-              labelKey={""}
+      <Animated.View entering={FadeInDown.delay(item.id ? 100 : 0).duration(400)}>
+        <GlassCard style={styles.vaultCard} contentStyle={styles.cardContent}>
+          
+          <View style={styles.vaultHeader}>
+            <View style={styles.vaultTitleRow}>
+              <View style={[styles.iconContainer, { backgroundColor: vaultColor + '20' }]}>
+                <Ionicons name="wallet" size={24} color={vaultColor} />
+              </View>
+              <View style={styles.titleInfo}>
+                <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold' }}>{item.name}</Typography>
+                <Typography variant="caption" style={{ color: colors.textMuted }}>{progressPercent}% Complete</Typography>
+              </View>
+            </View>
+            <TouchableOpacity 
+              style={[styles.addFundsBtn, { backgroundColor: vaultColor }]}
+              onPress={() => navigation.navigate('AddFunds', { vaultId: item.id })}
             >
-              <Pie.Chart innerRadius={35} />
-            </PolarChart>
-            <View style={styles.chartCenterText}>
-              <Typography variant="caption" style={{ color: colors.white, fontWeight: 'bold' }}>{progressPercent}%</Typography>
+              <Ionicons name="add" size={16} color={colors.white} style={{ marginRight: 4 }} />
+              <Typography variant="caption" style={{ color: colors.white, fontWeight: 'bold' }}>Add</Typography>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBarBackground}>
+              <View style={[styles.progressBarFill, { width: `${progressPercent}%`, backgroundColor: vaultColor }]} />
             </View>
           </View>
-        </View>
 
-        <View style={styles.vaultDetails}>
-          <Typography variant="caption" style={{ color: colors.text }}>
-            Saved: <Typography variant="caption" style={{ color: vaultColor, fontWeight: 'bold' }}>{formatCurrency(item.currentAmount)}</Typography>
-          </Typography>
-          <Typography variant="caption" style={{ color: colors.textMuted }}>
-            Target: {formatCurrency(item.targetAmount)}
-          </Typography>
-        </View>
+          <View style={styles.vaultDetails}>
+            <Typography variant="caption" style={{ color: colors.textMuted }}>
+              Saved: <Typography variant="caption" style={{ color: vaultColor, fontWeight: 'bold' }}>{formatCurrency(item.currentAmount)}</Typography>
+            </Typography>
+            <Typography variant="caption" style={{ color: colors.textMuted }}>
+              Target: <Typography variant="caption" style={{ color: colors.white, fontWeight: 'bold' }}>{formatCurrency(item.targetAmount)}</Typography>
+            </Typography>
+          </View>
 
-        <TouchableOpacity 
-          style={[styles.addFundsBtn, { backgroundColor: vaultColor }]}
-          onPress={() => navigation.navigate('AddFunds', { vaultId: item.id })}
-        >
-          <Typography variant="caption" style={{ color: colors.white, fontWeight: 'bold' }}>Add Funds</Typography>
-        </TouchableOpacity>
-      </GlassCard>
+        </GlassCard>
+      </Animated.View>
     );
   };
 
@@ -89,8 +86,6 @@ export const VaultsScreen = () => {
         data={vaults}
         keyExtractor={(item) => item.id}
         renderItem={renderVault}
-        numColumns={2}
-        columnWrapperStyle={styles.row}
         contentContainerStyle={styles.listContainer}
         ListEmptyComponent={
           <View style={styles.emptyState}>
@@ -128,45 +123,59 @@ const styles = StyleSheet.create({
   listContainer: {
     padding: 16,
   },
-  row: {
-    justifyContent: 'space-between',
-  },
   vaultCard: {
-    width: (width - 48) / 2, // 2 columns with padding
-    padding: 16,
     marginBottom: 16,
-    alignItems: 'center',
+    borderRadius: 20,
+  },
+  cardContent: {
+    padding: 20,
   },
   vaultHeader: {
-    marginBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 20,
   },
-  chartContainer: {
+  vaultTitleRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  titleInfo: {
+    flex: 1,
+  },
+  progressContainer: {
     marginBottom: 16,
   },
-  chartWrapper: {
-    width: 100,
-    height: 100,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 4,
+    overflow: 'hidden',
   },
-  chartCenterText: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
+  progressBarFill: {
+    height: '100%',
+    borderRadius: 4,
   },
   vaultDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
   },
   addFundsBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 16,
-    width: '100%',
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
   },
   emptyState: {
     alignItems: 'center',
