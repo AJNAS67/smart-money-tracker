@@ -107,7 +107,7 @@ export const DashboardScreen = () => {
           </Typography>
         </View>
         <View style={styles.amountContainer}>
-          <Typography variant="body" style={{ color: isIncome ? colors.success : colors.danger }}>
+          <Typography variant="body" style={{ color: isIncome ? colors.success : colors.white, fontWeight: 'bold' }}>
             {isIncome ? '+' : '-'}{formatCurrency(item.amount)}
           </Typography>
           <Typography variant="caption" style={{ color: colors.textMuted }}>

@@ -121,3 +121,21 @@ Following a strictly modular approach, we will build, test, and commit each phas
 - [x] Integrate Haptic feedback (`expo-haptics`) on interactions (e.g., adding a transaction)
 - [x] Final end-to-end testing and performance profiling
 > **Git Commit:** `fix: final polish, animations, and bug fixes`
+
+---
+
+## 🧾 Phase 10: Transactions Screen Revamp & Advanced Filtering
+**Description:** Completely redesigning the Transactions page to be highly compact, data-dense, and user-friendly, along with a powerful filtering system.
+
+- [ ] **UI Redesign (Compact & Responsive)**
+  - Convert massive, vertical transaction cards into sleek, horizontal list rows.
+  - Fix color contrast issues (ensure amounts are brightly colored instead of blending into the dark theme).
+  - Surface the **Transaction Notes** directly below the category name to eliminate dead space.
+- [ ] **Advanced Filtering Engine**
+  - Implement a scrollable filter chip bar at the top of the Transactions screen.
+  - Add filters for: **Transaction Type** (Income vs Expense).
+  - Add filters for: **Time Periods** (Day, Week, Month, Year).
+  - Add filters for: **Accounts** and **Categories**.
+- [ ] **Performance & Animation**
+  - Ensure the filter transitions are smooth using Reanimated.
+  - Maintain staggered list animations for the new compact rows.

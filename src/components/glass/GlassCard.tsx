@@ -6,9 +6,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 interface GlassCardProps extends ViewProps {
   children: React.ReactNode;
   intensity?: number;
+  contentStyle?: any;
 }
 
-export const GlassCard: React.FC<GlassCardProps> = ({ children, intensity = 20, style, ...props }) => {
+export const GlassCard: React.FC<GlassCardProps> = ({ children, intensity = 20, style, contentStyle, ...props }) => {
   return (
     <View style={[styles.container, style]} {...props}>
       <BlurView intensity={intensity} tint="dark" style={StyleSheet.absoluteFillObject} />
@@ -18,7 +19,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({ children, intensity = 20, 
         end={{ x: 1, y: 1 }}
         style={StyleSheet.absoluteFillObject}
       />
-      <View style={styles.content}>
+      <View style={[styles.content, contentStyle]}>
         {children}
       </View>
     </View>
