@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,7 +27,7 @@ type TransactionFormData = z.infer<typeof transactionSchema>;
 
 export const AddTransactionScreen = () => {
   const navigation = useNavigation();
-  const { addTransaction, categories, accounts } = useStore();
+  const { addTransaction, categories, accounts, budgets, transactions } = useStore();
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<TransactionFormData>({
@@ -46,6 +46,49 @@ export const AddTransactionScreen = () => {
   const filteredCategories = categories.filter(c => c.type === selectedType);
 
   const onSubmit = (data: TransactionFormData) => {
+    if (data.type === 'EXPENSE' && data.categoryId) {
+      const budget = budgets.find(b => b.categoryId === data.categoryId);
+      if (budget) {
+        const currentMonth = data.date.getMonth();
+        const currentYear = data.date.getFullYear();
+        
+        const spentAmount = transactions
+          .filter(t => {
+            const d = new Date(t.date);
+            return t.categoryId === data.categoryId 
+              && t.type === 'EXPENSE'
+              && d.getMonth() === currentMonth 
+              && d.getFullYear() === currentYear;
+          })
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        const newAmount = parseFloat(data.amount);
+        const newTotal = spentAmount + newAmount;
+
+        if (newTotal > budget.limitAmount) {
+          const cat = categories.find(c => c.id === data.categoryId);
+          
+          Alert.alert(
+            "Budget Limit Exceeded",
+            `You have a budget of ₹${budget.limitAmount} for ${cat?.name || 'this category'}.\n\nYou have already spent ₹${spentAmount}. Adding this transaction will exceed your budget by ₹${newTotal - budget.limitAmount}.\n\nAre you sure you want to add this transaction?`,
+            [
+              { text: "Cancel", style: "cancel" },
+              { 
+                text: "Add Anyway", 
+                style: "destructive",
+                onPress: () => saveTransaction(data)
+              }
+            ]
+          );
+          return;
+        }
+      }
+    }
+    
+    saveTransaction(data);
+  };
+
+  const saveTransaction = (data: TransactionFormData) => {
     addTransaction({
       amount: parseFloat(data.amount),
       type: data.type as TransactionType,
