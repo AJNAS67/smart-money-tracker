@@ -14,6 +14,7 @@ export const TransactionsScreen = () => {
   const navigation = useNavigation<any>();
   const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
   const [timeFilter, setTimeFilter] = useState<'ALL' | 'DAY' | 'WEEK' | 'MONTH' | 'YEAR'>('MONTH');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
 
   useEffect(() => {
     refreshTransactions();
@@ -24,6 +25,7 @@ export const TransactionsScreen = () => {
   
   const filteredTransactions = transactions.filter(t => {
     if (filter !== 'ALL' && t.type !== filter) return false;
+    if (categoryFilter !== 'ALL' && t.categoryId !== categoryFilter) return false;
     
     const d = new Date(t.date);
     if (timeFilter === 'YEAR') return d.getFullYear() === now.getFullYear();
@@ -74,7 +76,7 @@ export const TransactionsScreen = () => {
               {isIncome ? '+' : '-'}{formatCurrency(item.amount)}
             </Typography>
             <TouchableOpacity onPress={() => deleteTransaction(item.id)} style={styles.deleteButton}>
-              <Ionicons name="trash-outline" size={18} color={colors.danger} />
+              <Ionicons name="trash" size={16} color={colors.danger} />
             </TouchableOpacity>
           </View>
         </GlassCard>
@@ -107,6 +109,27 @@ export const TransactionsScreen = () => {
               onPress={() => setTimeFilter(f)}
             >
               <Typography variant="caption" style={{ color: timeFilter === f ? colors.white : colors.textMuted }}>{f === 'ALL' ? 'ALL TIME' : f}</Typography>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.filtersScroll, { marginTop: 12 }]}>
+          <TouchableOpacity 
+            style={[styles.filterChip, categoryFilter === 'ALL' && styles.filterChipActive]}
+            onPress={() => setCategoryFilter('ALL')}
+          >
+            <Typography variant="caption" style={{ color: categoryFilter === 'ALL' ? colors.white : colors.textMuted }}>ALL CATEGORIES</Typography>
+          </TouchableOpacity>
+          {categories.filter(c => filter === 'ALL' || c.type === filter).map(c => (
+            <TouchableOpacity 
+              key={c.id}
+              style={[styles.filterChip, categoryFilter === c.id && { backgroundColor: c.color, borderColor: c.color }]}
+              onPress={() => setCategoryFilter(c.id)}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Ionicons name={c.icon as any} size={12} color={categoryFilter === c.id ? colors.white : c.color} style={{ marginRight: 4 }} />
+                <Typography variant="caption" style={{ color: categoryFilter === c.id ? colors.white : colors.textMuted }}>{c.name}</Typography>
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -206,7 +229,9 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     marginTop: 8,
-    padding: 4,
+    padding: 6,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderRadius: 8,
   },
   emptyState: {
     alignItems: 'center',
