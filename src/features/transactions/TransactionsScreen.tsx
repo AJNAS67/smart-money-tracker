@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, FlatList, TouchableOpacity, StyleSheet, ScrollView, Modal, TouchableWithoutFeedback } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +15,7 @@ export const TransactionsScreen = () => {
   const [filter, setFilter] = useState<'ALL' | 'INCOME' | 'EXPENSE'>('ALL');
   const [timeFilter, setTimeFilter] = useState<'ALL' | 'DAY' | 'WEEK' | 'MONTH' | 'YEAR'>('MONTH');
   const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     refreshTransactions();
@@ -48,14 +49,14 @@ export const TransactionsScreen = () => {
   };
 
   const handleDelete = (id: string) => {
-    Alert.alert(
-      "Delete Transaction",
-      "Are you sure you want to delete this transaction?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => deleteTransaction(id) }
-      ]
-    );
+    setTransactionToDelete(id);
+  };
+
+  const confirmDelete = () => {
+    if (transactionToDelete) {
+      deleteTransaction(transactionToDelete);
+      setTransactionToDelete(null);
+    }
   };
 
   const renderTransaction = ({ item }: { item: Transaction }) => {
@@ -168,6 +169,46 @@ export const TransactionsScreen = () => {
       >
         <Ionicons name="add" size={32} color={colors.white} />
       </TouchableOpacity>
+
+      <Modal
+        visible={!!transactionToDelete}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setTransactionToDelete(null)}
+      >
+        <TouchableWithoutFeedback onPress={() => setTransactionToDelete(null)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                <GlassCard intensity={40} style={styles.modalCard}>
+                  <View style={styles.modalIconContainer}>
+                    <Ionicons name="trash-outline" size={32} color={colors.danger} />
+                  </View>
+                  <Typography variant="h3" color={colors.white} style={styles.modalTitle}>Delete Transaction</Typography>
+                  <Typography variant="body" align="center" style={styles.modalText}>
+                    Are you sure you want to permanently delete this transaction? This cannot be undone.
+                  </Typography>
+                  
+                  <View style={styles.modalActions}>
+                    <TouchableOpacity 
+                      style={styles.modalButtonCancel}
+                      onPress={() => setTransactionToDelete(null)}
+                    >
+                      <Typography variant="body" style={{ color: colors.white }}>Cancel</Typography>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.modalButtonDelete}
+                      onPress={confirmDelete}
+                    >
+                      <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>Delete</Typography>
+                    </TouchableOpacity>
+                  </View>
+                </GlassCard>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };
@@ -264,5 +305,54 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    maxWidth: 400,
+  },
+  modalCard: {
+    padding: 24,
+    alignItems: 'center',
+  },
+  modalIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    marginBottom: 8,
+  },
+  modalText: {
+    color: colors.textMuted,
+    marginBottom: 24,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    width: '100%',
+    gap: 12,
+  },
+  modalButtonCancel: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+  },
+  modalButtonDelete: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    backgroundColor: colors.danger,
+    alignItems: 'center',
   },
 });
