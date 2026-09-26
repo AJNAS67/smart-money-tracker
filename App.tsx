@@ -5,9 +5,13 @@ import { useEffect, useState } from 'react';
 import { initDatabase, CategoryRepository } from './src/database';
 import { View, Text } from 'react-native';
 import { colors } from './src/theme/colors';
+import { useStore } from './src/store/useStore';
+import { PinLockScreen } from './src/features/settings/PinLockScreen';
 
 export default function App() {
   const [dbInitialized, setDbInitialized] = useState(false);
+  const [securityChecked, setSecurityChecked] = useState(false);
+  const { isAppLocked, isUnlockedSession, initializeSecurity } = useStore();
 
   useEffect(() => {
     const setup = async () => {
@@ -15,6 +19,9 @@ export default function App() {
         await initDatabase();
         CategoryRepository.seedDefaults();
         setDbInitialized(true);
+        
+        await initializeSecurity();
+        setSecurityChecked(true);
       } catch (e) {
         console.error(e);
       }
@@ -22,11 +29,20 @@ export default function App() {
     setup();
   }, []);
 
-  if (!dbInitialized) {
+  if (!dbInitialized || !securityChecked) {
     return (
       <View style={{ flex: 1, backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: colors.text }}>Loading Database...</Text>
+        <Text style={{ color: colors.text }}>Loading...</Text>
       </View>
+    );
+  }
+
+  if (isAppLocked && !isUnlockedSession) {
+    return (
+      <>
+        <StatusBar style="light" />
+        <PinLockScreen />
+      </>
     );
   }
 

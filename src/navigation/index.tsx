@@ -7,6 +7,7 @@ import { AddTransactionScreen } from '../features/transactions/AddTransactionScr
 import { AddBudgetScreen } from '../features/budgets/AddBudgetScreen';
 import { AddVaultScreen } from '../features/vaults/AddVaultScreen';
 import { AddFundsScreen } from '../features/vaults/AddFundsScreen';
+import { SettingsScreen } from '../features/settings/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -20,6 +21,7 @@ export const RootNavigator = () => {
         <Stack.Screen name="AddBudget" component={AddBudgetScreen} />
         <Stack.Screen name="AddVault" component={AddVaultScreen} />
         <Stack.Screen name="AddFunds" component={AddFundsScreen} />
+        <Stack.Screen name="Settings" component={SettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

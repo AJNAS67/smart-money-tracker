@@ -103,13 +103,13 @@ Following a strictly modular approach, we will build, test, and commit each phas
 
 ---
 
-## 🔒 Phase 8: Security & Settings
+## 🔒 Phase 8: Security & Settings (✅ Complete)
 **Description:** Protecting financial data from unauthorized local access and managing app settings.
 
-- [ ] **UI:** Settings Screen
-- [ ] **Logic:** Setup App PIN lock (using `expo-secure-store`)
-- [ ] **UI:** PIN entry screen block on app launch/resume (if enabled)
-- [ ] **Logic:** Database Export/Import (Backup SQLite database to JSON/CSV file locally)
+- [x] **UI:** Settings Screen
+- [x] **Logic:** Setup App PIN lock (using `expo-secure-store`)
+- [x] **UI:** PIN entry screen block on app launch/resume (if enabled)
+- [x] **Logic:** Database Export/Import (Backup SQLite database to JSON/CSV file locally)
 > **Git Commit:** `feat(security): implement app PIN lock and settings`
 
 ---

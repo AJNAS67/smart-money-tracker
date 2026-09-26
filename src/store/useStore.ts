@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { Account, Transaction, Category, Budget, Vault } from '../database/schema';
 import { AccountRepository, TransactionRepository, CategoryRepository, BudgetRepository, VaultRepository } from '../database';
+import { SettingsService } from '../services/SettingsService';
 
 interface FinanceState {
   accounts: Account[];
@@ -10,7 +11,16 @@ interface FinanceState {
   vaults: Vault[];
   totalBalance: number;
   
+  // Security State
+  isAppLocked: boolean;
+  hasPinSetup: boolean;
+  isUnlockedSession: boolean;
+  
   // Actions
+  initializeSecurity: () => Promise<void>;
+  unlockSession: (pin: string) => Promise<boolean>;
+  setAppLock: (pin: string | null) => Promise<void>;
+  
   refreshAccounts: () => void;
   refreshTransactions: () => void;
   refreshCategories: () => void;
@@ -34,6 +44,35 @@ export const useStore = create<FinanceState>((set, get) => ({
   budgets: [],
   vaults: [],
   totalBalance: 0,
+  isAppLocked: false,
+  hasPinSetup: false,
+  isUnlockedSession: false,
+
+  initializeSecurity: async () => {
+    const isLocked = await SettingsService.isAppLocked();
+    const hasPin = await SettingsService.hasPinSetup();
+    set({ isAppLocked: isLocked, hasPinSetup: hasPin });
+  },
+
+  unlockSession: async (pin: string) => {
+    const isValid = await SettingsService.verifyPin(pin);
+    if (isValid) {
+      set({ isUnlockedSession: true });
+    }
+    return isValid;
+  },
+
+  setAppLock: async (pin: string | null) => {
+    if (pin) {
+      await SettingsService.setPin(pin);
+      await SettingsService.setAppLocked(true);
+      set({ isAppLocked: true, hasPinSetup: true });
+    } else {
+      await SettingsService.removePin();
+      await SettingsService.setAppLocked(false);
+      set({ isAppLocked: false, hasPinSetup: false });
+    }
+  },
 
   refreshAccounts: () => {
     const accounts = AccountRepository.getAll();

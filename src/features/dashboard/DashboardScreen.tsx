@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../../store/useStore';
 import { Typography } from '../../components/common/Typography';
 import { GlassCard } from '../../components/glass/GlassCard';
@@ -119,8 +120,8 @@ export const DashboardScreen = () => {
           <Typography variant="caption" style={styles.greeting}>Welcome back,</Typography>
           <Typography variant="h2" color={colors.white}>MoneyFlow</Typography>
         </View>
-        <TouchableOpacity style={styles.profileBtn}>
-          <Ionicons name="person" size={20} color={colors.white} />
+        <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('Settings')}>
+          <Ionicons name="settings-outline" size={20} color={colors.white} />
         </TouchableOpacity>
       </View>
 
