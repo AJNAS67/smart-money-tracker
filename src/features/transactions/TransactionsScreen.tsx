@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, FlatList, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -47,6 +47,17 @@ export const TransactionsScreen = () => {
     }).format(Math.abs(amount));
   };
 
+  const handleDelete = (id: string) => {
+    Alert.alert(
+      "Delete Transaction",
+      "Are you sure you want to delete this transaction?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => deleteTransaction(id) }
+      ]
+    );
+  };
+
   const renderTransaction = ({ item }: { item: Transaction }) => {
     const category = categories.find(c => c.id === item.categoryId);
     const account = accounts.find(a => a.id === item.accountId);
@@ -75,7 +86,7 @@ export const TransactionsScreen = () => {
             <Typography variant="subtitle" style={{ color: isIncome ? colors.success : colors.white, fontWeight: 'bold' }}>
               {isIncome ? '+' : '-'}{formatCurrency(item.amount)}
             </Typography>
-            <TouchableOpacity onPress={() => deleteTransaction(item.id)} style={styles.deleteButton}>
+            <TouchableOpacity onPress={() => handleDelete(item.id)} style={styles.deleteButton}>
               <Ionicons name="trash" size={16} color={colors.danger} />
             </TouchableOpacity>
           </View>
@@ -91,7 +102,7 @@ export const TransactionsScreen = () => {
       </View>
 
       <View style={styles.filtersWrapper}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtersScroll}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filtersScrollContent}>
           {(['ALL', 'INCOME', 'EXPENSE'] as const).map(f => (
             <TouchableOpacity 
               key={f}
@@ -113,7 +124,7 @@ export const TransactionsScreen = () => {
           ))}
         </ScrollView>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.filtersScroll, { marginTop: 12 }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }} contentContainerStyle={styles.filtersScrollContent}>
           <TouchableOpacity 
             style={[styles.filterChip, categoryFilter === 'ALL' && styles.filterChipActive]}
             onPress={() => setCategoryFilter('ALL')}
@@ -177,7 +188,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.05)',
   },
-  filtersScroll: {
+  filtersScrollContent: {
     paddingHorizontal: 24,
   },
   filterChip: {
