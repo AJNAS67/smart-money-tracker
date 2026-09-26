@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +17,7 @@ const { width } = Dimensions.get('window');
 export const DashboardScreen = () => {
   const { totalBalance, transactions, categories, accounts, refreshAccounts, refreshTransactions, refreshCategories } = useStore();
   const navigation = useNavigation<any>();
+  const [timeFilter, setTimeFilter] = useState<'WEEK' | 'MONTH' | 'YEAR' | 'ALL'>('MONTH');
 
   useEffect(() => {
     refreshAccounts();
@@ -33,20 +34,25 @@ export const DashboardScreen = () => {
 
   const recentTransactions = transactions.slice(0, 5);
 
-  // Calculate Income vs Expense for current month
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
   
-  const currentMonthTransactions = transactions.filter(t => {
+  const filteredTransactions = transactions.filter(t => {
     const d = new Date(t.date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    if (timeFilter === 'ALL') return true;
+    if (timeFilter === 'YEAR') return d.getFullYear() === now.getFullYear();
+    if (timeFilter === 'MONTH') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    if (timeFilter === 'WEEK') {
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return d >= oneWeekAgo && d <= now;
+    }
+    return true;
   });
 
-  const monthlyIncome = currentMonthTransactions
+  const monthlyIncome = filteredTransactions
     .filter(t => t.type === 'INCOME')
     .reduce((sum, t) => sum + t.amount, 0);
     
-  const monthlyExpense = currentMonthTransactions
+  const monthlyExpense = filteredTransactions
     .filter(t => t.type === 'EXPENSE')
     .reduce((sum, t) => sum + t.amount, 0);
 
@@ -54,7 +60,7 @@ export const DashboardScreen = () => {
   const expenseByCategory = categories
     .filter(c => c.type === 'EXPENSE')
     .map(category => {
-      const amount = currentMonthTransactions
+      const amount = filteredTransactions
         .filter(t => t.type === 'EXPENSE' && t.categoryId === category.id)
         .reduce((sum, t) => sum + t.amount, 0);
       return {
@@ -155,6 +161,23 @@ export const DashboardScreen = () => {
       </View>
 
       <GlassCard style={styles.chartCard}>
+        <View style={styles.filterTabs}>
+          {(['WEEK', 'MONTH', 'YEAR', 'ALL'] as const).map(filter => (
+            <TouchableOpacity
+              key={filter}
+              style={[styles.filterTab, timeFilter === filter && styles.filterTabActive]}
+              onPress={() => setTimeFilter(filter)}
+            >
+              <Typography 
+                variant="caption" 
+                style={{ color: timeFilter === filter ? colors.white : colors.textMuted, fontWeight: timeFilter === filter ? 'bold' : 'normal' }}
+              >
+                {filter === 'ALL' ? 'ALL TIME' : filter}
+              </Typography>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         <View style={styles.chartContainer}>
           <PolarChart
             data={pieData}
@@ -174,7 +197,9 @@ export const DashboardScreen = () => {
             </View>
           ))}
           {expenseByCategory.length === 0 && (
-             <Typography variant="caption" style={{ color: colors.textMuted, textAlign: 'center' }}>No expenses this month</Typography>
+             <Typography variant="caption" style={{ color: colors.textMuted, textAlign: 'center' }}>
+               {`No expenses for this ${timeFilter.toLowerCase()}`}
+             </Typography>
           )}
         </View>
       </GlassCard>
@@ -353,6 +378,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 16,
+  },
+  filterTabs: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 8,
+    padding: 4,
+    marginBottom: 16,
+  },
+  filterTab: {
+    flex: 1,
+    paddingVertical: 6,
+    alignItems: 'center',
+    borderRadius: 6,
+  },
+  filterTabActive: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
   },
   barChartContainer: {
     height: 220,
