@@ -179,43 +179,62 @@ export const TransactionsScreen = () => {
         <TouchableWithoutFeedback onPress={() => setTransactionToDelete(null)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
-              <View style={styles.modalContent}>
-                <GlassCard intensity={40} style={styles.modalCard}>
+              <View style={styles.bottomSheetContent}>
+                <View style={styles.bottomSheetCard}>
+                  
+                  {/* Warning Indicator */}
                   <View style={styles.modalIconContainer}>
-                    <Ionicons name="trash-outline" size={32} color={colors.danger} />
+                    <Ionicons name="trash" size={28} color="#EF4444" />
                   </View>
-                  <Typography variant="h3" color={colors.white} style={styles.modalTitle}>Delete Transaction</Typography>
+                  
+                  {/* Micro-copy */}
+                  <Typography variant="h3" color={colors.white} style={styles.modalTitle}>Delete Transaction?</Typography>
                   <Typography variant="body" align="center" style={styles.modalText}>
-                    Are you sure you want to permanently delete this transaction? This cannot be undone.
+                    This will permanently remove this record from your balances and budget calculations.
                   </Typography>
 
-                  {transactionToDelete && (
-                    <View style={styles.transactionPreview}>
-                      <Typography variant="subtitle" color={colors.white}>
-                        {categories.find(c => c.id === transactions.find(t => t.id === transactionToDelete)?.categoryId)?.name || 'Uncategorized'}
-                      </Typography>
-                      <Typography variant="subtitle" style={{ color: transactions.find(t => t.id === transactionToDelete)?.type === 'INCOME' ? colors.success : colors.white, fontWeight: 'bold' }}>
-                        {transactions.find(t => t.id === transactionToDelete)?.type === 'INCOME' ? '+' : '-'}
-                        {formatCurrency(transactions.find(t => t.id === transactionToDelete)?.amount || 0)}
-                      </Typography>
-                    </View>
-                  )}
+                  {/* Transaction Summary Card */}
+                  {transactionToDelete && (() => {
+                    const t = transactions.find(tx => tx.id === transactionToDelete);
+                    const c = categories.find(cat => cat.id === t?.categoryId);
+                    const a = accounts.find(acc => acc.id === t?.accountId);
+                    
+                    return t && c ? (
+                      <View style={styles.transactionPreviewCard}>
+                        <View style={[styles.previewIconContainer, { backgroundColor: c.color + '20' }]}>
+                          <Ionicons name={c.icon as any} size={20} color={c.color} />
+                        </View>
+                        <View style={styles.previewInfo}>
+                          <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>
+                            {c.name}
+                          </Typography>
+                          <Typography variant="caption" style={{ color: colors.textMuted, marginTop: 2 }}>
+                            {a?.name} • {new Date(t.date).toLocaleDateString()}
+                          </Typography>
+                        </View>
+                        <Typography variant="subtitle" style={{ color: t.type === 'INCOME' ? colors.success : colors.white, fontWeight: 'bold' }}>
+                          {t.type === 'INCOME' ? '+' : '-'}{formatCurrency(t.amount)}
+                        </Typography>
+                      </View>
+                    ) : null;
+                  })()}
                   
-                  <View style={styles.modalActions}>
-                    <TouchableOpacity 
-                      style={styles.modalButtonCancel}
-                      onPress={() => setTransactionToDelete(null)}
-                    >
-                      <Typography variant="body" style={{ color: colors.white }}>Cancel</Typography>
-                    </TouchableOpacity>
+                  {/* Action Buttons */}
+                  <View style={styles.modalActionsVertical}>
                     <TouchableOpacity 
                       style={styles.modalButtonDelete}
                       onPress={confirmDelete}
                     >
-                      <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>Delete</Typography>
+                      <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>Delete Transaction</Typography>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.modalButtonCancel}
+                      onPress={() => setTransactionToDelete(null)}
+                    >
+                      <Typography variant="body" style={{ color: colors.white }}>Keep Transaction</Typography>
                     </TouchableOpacity>
                   </View>
-                </GlassCard>
+                </View>
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -320,23 +339,31 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    justifyContent: 'flex-end',
   },
-  modalContent: {
-    width: '85%',
-    maxWidth: 400,
+  bottomSheetContent: {
+    width: '100%',
+    padding: 16,
+    paddingBottom: 32, // extra padding for safe area
   },
-  modalCard: {
+  bottomSheetCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 24,
     padding: 24,
     alignItems: 'center',
-    backgroundColor: '#1E293B', // Solid medium blue/slate background for Modal visibility
+    borderWidth: 1,
+    borderColor: '#2D3748',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
   },
   modalIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: 'rgba(239, 68, 68, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
@@ -344,39 +371,57 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     marginBottom: 8,
+    fontWeight: 'bold',
   },
   modalText: {
     color: colors.textMuted,
-    marginBottom: 16,
+    marginBottom: 24,
+    lineHeight: 20,
+    paddingHorizontal: 8,
   },
-  transactionPreview: {
+  transactionPreviewCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
     width: '100%',
     padding: 16,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-    marginBottom: 24,
+    backgroundColor: '#0F172A',
+    borderRadius: 16,
+    marginBottom: 28,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: '#2D3748',
   },
-  modalActions: {
-    flexDirection: 'row',
+  previewIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  previewInfo: {
+    flex: 1,
+  },
+  modalActionsVertical: {
     width: '100%',
     gap: 12,
   },
-  modalButtonCancel: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-  },
   modalButtonDelete: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.danger,
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 14,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modalButtonCancel: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 14,
+    backgroundColor: 'transparent',
     alignItems: 'center',
   },
 });
