@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../../store/useStore';
 import { Typography } from '../../components/common/Typography';
 import { GlassCard } from '../../components/glass/GlassCard';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { colors } from '../../theme/colors';
 import { Transaction } from '../../database/schema';
 
@@ -170,76 +171,42 @@ export const TransactionsScreen = () => {
         <Ionicons name="add" size={32} color={colors.white} />
       </TouchableOpacity>
 
-      <Modal
+      <ConfirmModal
         visible={!!transactionToDelete}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setTransactionToDelete(null)}
+        title="Delete Transaction?"
+        description="This will permanently remove this record from your balances and budget calculations."
+        iconName="trash"
+        primaryActionLabel="Delete Transaction"
+        onPrimaryAction={confirmDelete}
+        secondaryActionLabel="Keep Transaction"
+        onSecondaryAction={() => setTransactionToDelete(null)}
       >
-        <TouchableWithoutFeedback onPress={() => setTransactionToDelete(null)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.bottomSheetContent}>
-                <View style={styles.bottomSheetCard}>
-                  
-                  {/* Warning Indicator */}
-                  <View style={styles.modalIconContainer}>
-                    <Ionicons name="trash" size={28} color="#EF4444" />
-                  </View>
-                  
-                  {/* Micro-copy */}
-                  <Typography variant="h3" color={colors.white} style={styles.modalTitle}>Delete Transaction?</Typography>
-                  <Typography variant="body" align="center" style={styles.modalText}>
-                    This will permanently remove this record from your balances and budget calculations.
-                  </Typography>
-
-                  {/* Transaction Summary Card */}
-                  {transactionToDelete && (() => {
-                    const t = transactions.find(tx => tx.id === transactionToDelete);
-                    const c = categories.find(cat => cat.id === t?.categoryId);
-                    const a = accounts.find(acc => acc.id === t?.accountId);
-                    
-                    return t && c ? (
-                      <View style={styles.transactionPreviewCard}>
-                        <View style={[styles.previewIconContainer, { backgroundColor: c.color + '20' }]}>
-                          <Ionicons name={c.icon as any} size={20} color={c.color} />
-                        </View>
-                        <View style={styles.previewInfo}>
-                          <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>
-                            {c.name}
-                          </Typography>
-                          <Typography variant="caption" style={{ color: colors.textMuted, marginTop: 2 }}>
-                            {a?.name} • {new Date(t.date).toLocaleDateString()}
-                          </Typography>
-                        </View>
-                        <Typography variant="subtitle" style={{ color: t.type === 'INCOME' ? colors.success : colors.white, fontWeight: 'bold' }}>
-                          {t.type === 'INCOME' ? '+' : '-'}{formatCurrency(t.amount)}
-                        </Typography>
-                      </View>
-                    ) : null;
-                  })()}
-                  
-                  {/* Action Buttons */}
-                  <View style={styles.modalActionsVertical}>
-                    <TouchableOpacity 
-                      style={styles.modalButtonDelete}
-                      onPress={confirmDelete}
-                    >
-                      <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>Delete Transaction</Typography>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.modalButtonCancel}
-                      onPress={() => setTransactionToDelete(null)}
-                    >
-                      <Typography variant="body" style={{ color: colors.white }}>Keep Transaction</Typography>
-                    </TouchableOpacity>
-                  </View>
-                </View>
+        {/* Transaction Summary Card */}
+        {transactionToDelete && (() => {
+          const t = transactions.find(tx => tx.id === transactionToDelete);
+          const c = categories.find(cat => cat.id === t?.categoryId);
+          const a = accounts.find(acc => acc.id === t?.accountId);
+          
+          return t && c ? (
+            <View style={styles.transactionPreviewCard}>
+              <View style={[styles.previewIconContainer, { backgroundColor: c.color + '20' }]}>
+                <Ionicons name={c.icon as any} size={20} color={c.color} />
               </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+              <View style={styles.previewInfo}>
+                <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>
+                  {c.name}
+                </Typography>
+                <Typography variant="caption" style={{ color: colors.textMuted, marginTop: 2 }}>
+                  {a?.name} • {new Date(t.date).toLocaleDateString()}
+                </Typography>
+              </View>
+              <Typography variant="subtitle" style={{ color: t.type === 'INCOME' ? colors.success : colors.white, fontWeight: 'bold' }}>
+                {t.type === 'INCOME' ? '+' : '-'}{formatCurrency(t.amount)}
+              </Typography>
+            </View>
+          ) : null;
+        })()}
+      </ConfirmModal>
     </View>
   );
 };
@@ -337,48 +304,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.75)',
-    justifyContent: 'flex-end',
-  },
-  bottomSheetContent: {
-    width: '100%',
-    padding: 16,
-    paddingBottom: 32, // extra padding for safe area
-  },
-  bottomSheetCard: {
-    backgroundColor: '#1E293B',
-    borderRadius: 24,
-    padding: 24,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#2D3748',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    elevation: 10,
-  },
-  modalIconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  modalTitle: {
-    marginBottom: 8,
-    fontWeight: 'bold',
-  },
-  modalText: {
-    color: colors.textMuted,
-    marginBottom: 24,
-    lineHeight: 20,
-    paddingHorizontal: 8,
-  },
   transactionPreviewCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -400,28 +325,5 @@ const styles = StyleSheet.create({
   },
   previewInfo: {
     flex: 1,
-  },
-  modalActionsVertical: {
-    width: '100%',
-    gap: 12,
-  },
-  modalButtonDelete: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 14,
-    backgroundColor: '#EF4444',
-    alignItems: 'center',
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  modalButtonCancel: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 14,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
   },
 });

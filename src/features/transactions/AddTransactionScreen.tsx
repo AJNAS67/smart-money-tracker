@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,6 +12,7 @@ import { TransactionType } from '../../database/schema';
 import { Typography } from '../../components/common/Typography';
 import { Input } from '../../components/forms/Input';
 import { GradientButton } from '../../components/common/GradientButton';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { colors } from '../../theme/colors';
 
 const transactionSchema = z.object({
@@ -29,6 +30,7 @@ export const AddTransactionScreen = () => {
   const navigation = useNavigation();
   const { addTransaction, categories, accounts, budgets, transactions, refreshBudgets, refreshTransactions } = useStore();
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [budgetWarning, setBudgetWarning] = useState<{ budgetAmount: number, spentAmount: number, newTotal: number, catName: string, data: TransactionFormData } | null>(null);
 
   useEffect(() => {
     refreshBudgets();
@@ -73,18 +75,13 @@ export const AddTransactionScreen = () => {
         if (newTotal > budget.limitAmount) {
           const cat = categories.find(c => c.id === data.categoryId);
           
-          Alert.alert(
-            "Budget Limit Exceeded",
-            `You have a budget of ₹${budget.limitAmount} for ${cat?.name || 'this category'}.\n\nYou have already spent ₹${spentAmount}. Adding this transaction will exceed your budget by ₹${newTotal - budget.limitAmount}.\n\nAre you sure you want to add this transaction?`,
-            [
-              { text: "Cancel", style: "cancel" },
-              { 
-                text: "Add Anyway", 
-                style: "destructive",
-                onPress: () => saveTransaction(data)
-              }
-            ]
-          );
+          setBudgetWarning({
+            budgetAmount: budget.limitAmount,
+            spentAmount: spentAmount,
+            newTotal: newTotal,
+            catName: cat?.name || 'this category',
+            data: data
+          });
           return;
         }
       }
@@ -254,6 +251,27 @@ export const AddTransactionScreen = () => {
       <GradientButton
         title="Save Transaction"
         onPress={handleSubmit(onSubmit)}
+      />
+
+      <ConfirmModal
+        visible={!!budgetWarning}
+        title="Budget Exceeded"
+        description={
+          budgetWarning ? 
+          `You have a budget of ₹${budgetWarning.budgetAmount} for ${budgetWarning.catName}.\n\nYou have already spent ₹${budgetWarning.spentAmount}. Adding this transaction will exceed your budget by ₹${budgetWarning.newTotal - budgetWarning.budgetAmount}.\n\nAre you sure you want to add this transaction?` : ''
+        }
+        iconName="warning"
+        iconColor="#F97316"
+        iconBgColor="rgba(249, 115, 22, 0.15)"
+        primaryActionLabel="Add Anyway"
+        primaryActionColor="#F97316"
+        onPrimaryAction={() => {
+          if (budgetWarning) {
+            saveTransaction(budgetWarning.data);
+            setBudgetWarning(null);
+          }
+        }}
+        onSecondaryAction={() => setBudgetWarning(null)}
       />
     </ScrollView>
   );

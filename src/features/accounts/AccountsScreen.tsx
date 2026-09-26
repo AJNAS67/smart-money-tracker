@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../../store/useStore';
 import { Typography } from '../../components/common/Typography';
+import { ConfirmModal } from '../../components/common/ConfirmModal';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { colors } from '../../theme/colors';
 import { Account } from '../../database/schema';
@@ -361,70 +362,34 @@ export const AccountsScreen = () => {
         </TouchableWithoutFeedback>
       </Modal>
       {/* Delete Confirmation Modal */}
-      <Modal
+      <ConfirmModal
         visible={!!accountToDelete}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setAccountToDelete(null)}
+        title="Delete Account?"
+        description="This will permanently remove this account. All associated transactions will be kept, but the account will be gone."
+        iconName="trash"
+        primaryActionLabel="Delete Account"
+        onPrimaryAction={confirmDelete}
+        onSecondaryAction={() => setAccountToDelete(null)}
       >
-        <TouchableWithoutFeedback onPress={() => setAccountToDelete(null)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={styles.bottomSheetContent}>
-                <View style={[styles.bottomSheetCard, { alignItems: 'center' }]}>
-                  
-                  {/* Warning Indicator */}
-                  <View style={styles.modalWarningIconContainer}>
-                    <Ionicons name="trash" size={28} color="#EF4444" />
-                  </View>
-                  
-                  {/* Micro-copy */}
-                  <Typography variant="h3" color={colors.white} style={styles.modalTitle}>Delete Account?</Typography>
-                  <Typography variant="body" align="center" style={styles.modalText}>
-                    This will permanently remove this account. All associated transactions will be kept, but the account will be gone.
-                  </Typography>
-
-                  {/* Account Summary Card */}
-                  {accountToDelete && (
-                    <View style={styles.previewCard}>
-                      <View style={[styles.previewIconContainer, { backgroundColor: accountToDelete.color || colors.primary }]}>
-                        <Ionicons name={(accountToDelete.icon as any) || 'wallet'} size={20} color={colors.white} />
-                      </View>
-                      <View style={styles.previewInfo}>
-                        <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>
-                          {accountToDelete.name}
-                        </Typography>
-                        <Typography variant="caption" style={{ color: colors.textMuted, marginTop: 2 }}>
-                          {accountToDelete.type}
-                        </Typography>
-                      </View>
-                      <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold' }}>
-                        {formatCurrency(accountToDelete.balance)}
-                      </Typography>
-                    </View>
-                  )}
-                  
-                  {/* Action Buttons */}
-                  <View style={styles.modalActionsVertical}>
-                    <TouchableOpacity 
-                      style={styles.modalButtonDelete}
-                      onPress={confirmDelete}
-                    >
-                      <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>Delete Account</Typography>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={styles.modalButtonCancel}
-                      onPress={() => setAccountToDelete(null)}
-                    >
-                      <Typography variant="body" style={{ color: colors.white }}>Cancel</Typography>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
+        {accountToDelete && (
+          <View style={styles.previewCard}>
+            <View style={[styles.previewIconContainer, { backgroundColor: accountToDelete.color || colors.primary }]}>
+              <Ionicons name={(accountToDelete.icon as any) || 'wallet'} size={20} color={colors.white} />
+            </View>
+            <View style={styles.previewInfo}>
+              <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>
+                {accountToDelete.name}
+              </Typography>
+              <Typography variant="caption" style={{ color: colors.textMuted, marginTop: 2 }}>
+                {accountToDelete.type}
+              </Typography>
+            </View>
+            <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold' }}>
+              {formatCurrency(accountToDelete.balance)}
+            </Typography>
           </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+        )}
+      </ConfirmModal>
     </View>
   );
 };
@@ -711,28 +676,5 @@ const styles = StyleSheet.create({
   },
   previewInfo: {
     flex: 1,
-  },
-  modalActionsVertical: {
-    width: '100%',
-    gap: 12,
-  },
-  modalButtonDelete: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 14,
-    backgroundColor: '#EF4444',
-    alignItems: 'center',
-    shadowColor: '#EF4444',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  modalButtonCancel: {
-    width: '100%',
-    paddingVertical: 16,
-    borderRadius: 14,
-    backgroundColor: 'transparent',
-    alignItems: 'center',
   },
 });
