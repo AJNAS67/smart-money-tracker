@@ -188,6 +188,18 @@ export const TransactionsScreen = () => {
                   <Typography variant="body" align="center" style={styles.modalText}>
                     Are you sure you want to permanently delete this transaction? This cannot be undone.
                   </Typography>
+
+                  {transactionToDelete && (
+                    <View style={styles.transactionPreview}>
+                      <Typography variant="subtitle" color={colors.white}>
+                        {categories.find(c => c.id === transactions.find(t => t.id === transactionToDelete)?.categoryId)?.name || 'Uncategorized'}
+                      </Typography>
+                      <Typography variant="subtitle" style={{ color: transactions.find(t => t.id === transactionToDelete)?.type === 'INCOME' ? colors.success : colors.white, fontWeight: 'bold' }}>
+                        {transactions.find(t => t.id === transactionToDelete)?.type === 'INCOME' ? '+' : '-'}
+                        {formatCurrency(transactions.find(t => t.id === transactionToDelete)?.amount || 0)}
+                      </Typography>
+                    </View>
+                  )}
                   
                   <View style={styles.modalActions}>
                     <TouchableOpacity 
@@ -319,6 +331,7 @@ const styles = StyleSheet.create({
   modalCard: {
     padding: 24,
     alignItems: 'center',
+    backgroundColor: '#1E293B', // Solid medium blue/slate background for Modal visibility
   },
   modalIconContainer: {
     width: 64,
@@ -334,7 +347,18 @@ const styles = StyleSheet.create({
   },
   modalText: {
     color: colors.textMuted,
+    marginBottom: 16,
+  },
+  transactionPreview: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    padding: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 12,
     marginBottom: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   modalActions: {
     flexDirection: 'row',
