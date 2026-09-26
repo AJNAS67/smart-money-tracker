@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, FlatList, TouchableOpacity, StyleSheet, ScrollView, Dimensions } from 'react-native';
+import { View, FlatList, TouchableOpacity, StyleSheet, ScrollView, Dimensions, Modal, TouchableWithoutFeedback, Alert } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -13,8 +13,9 @@ const { width } = Dimensions.get('window');
 const CARD_WIDTH = width - 32; // Full width minus padding
 
 export const AccountsScreen = () => {
-  const { accounts, totalBalance, refreshAccounts } = useStore();
+  const { accounts, totalBalance, refreshAccounts, deleteAccount } = useStore();
   const navigation = useNavigation<any>();
+  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
 
   useEffect(() => {
     refreshAccounts();
@@ -58,96 +59,118 @@ export const AccountsScreen = () => {
 
     return (
       <Animated.View entering={FadeInDown.delay(index * 100).duration(400)}>
-        <GlassCard style={[styles.creditCardDetail, { backgroundColor: '#1A2138' }]}>
-          <View style={styles.ccHeader}>
-            <View style={styles.ccHeaderLeft}>
-              <View style={[styles.ccIconContainer, { backgroundColor: colors.white }]}>
-                <Ionicons name={item.icon as any || 'card'} size={20} color={item.color || colors.primary} />
-              </View>
-              <View>
-                <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold' }}>{item.name}</Typography>
-                <Typography variant="caption" style={{ color: colors.textMuted }}>{item.bankName || 'Credit Card'}</Typography>
-              </View>
-            </View>
-            <View style={styles.ccHeaderRight}>
-              {item.last4Digits && (
-                <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold', letterSpacing: 2 }}>
-                  .... {item.last4Digits}
-                </Typography>
-              )}
-            </View>
-          </View>
-
-          <View style={styles.ccBalancesRow}>
-            <View>
-              <Typography variant="caption" style={{ color: colors.textMuted }}>Outstanding</Typography>
-              <Typography variant="h3" style={{ color: '#FCA5A5', fontWeight: 'bold' }}>{formatCurrency(outstanding)}</Typography>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Typography variant="caption" style={{ color: colors.textMuted }}>Available</Typography>
-              <Typography variant="h3" style={{ color: colors.white, fontWeight: 'bold' }}>{formatCurrency(available)}</Typography>
-            </View>
-          </View>
-
-          <View style={styles.ccProgressContainer}>
-            <View style={styles.ccProgressBg}>
-              <View style={[styles.ccProgressFill, { width: `${Math.min(usedPercent, 100)}%` }]} />
-            </View>
-            <View style={styles.ccProgressLabels}>
-              <Typography variant="caption" style={{ color: colors.textMuted, fontSize: 10 }}>
-                {formatCurrency(available)} available • {Math.round(usedPercent)}% used
-              </Typography>
-              <Typography variant="caption" style={{ color: colors.textMuted, fontSize: 10 }}>
-                Limit {formatCurrency(limit)}
-              </Typography>
-            </View>
-          </View>
-
-          {item.billPaymentDate && (
-            <View style={styles.ccBillInfo}>
-              <View style={styles.ccBillDateContainer}>
-                <Ionicons name="calendar-outline" size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
+        <TouchableOpacity activeOpacity={0.9} onPress={() => setSelectedAccount(item)}>
+          <GlassCard style={[styles.creditCardDetail, { backgroundColor: '#1A2138' }]}>
+            <View style={styles.ccHeader}>
+              <View style={styles.ccHeaderLeft}>
+                <View style={[styles.ccIconContainer, { backgroundColor: colors.white }]}>
+                  <Ionicons name={item.icon as any || 'card'} size={20} color={item.color || colors.primary} />
+                </View>
                 <View>
-                  <Typography variant="caption" style={{ color: colors.textMuted, fontSize: 10, textTransform: 'uppercase' }}>Next Bill</Typography>
-                  <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>
-                    {new Date(item.billPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                  </Typography>
+                  <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold' }}>{item.name}</Typography>
+                  <Typography variant="caption" style={{ color: colors.textMuted }}>{item.bankName || 'Credit Card'}</Typography>
                 </View>
               </View>
-              <View style={styles.ccDaysLeftChip}>
-                <Typography variant="caption" style={{ color: '#60A5FA', fontWeight: 'bold' }}>{daysLeftText}</Typography>
+              <View style={styles.ccHeaderRight}>
+                {item.last4Digits && (
+                  <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold', letterSpacing: 2 }}>
+                    .... {item.last4Digits}
+                  </Typography>
+                )}
               </View>
             </View>
-          )}
-        </GlassCard>
+
+            <View style={styles.ccBalancesRow}>
+              <View>
+                <Typography variant="caption" style={{ color: colors.textMuted }}>Outstanding</Typography>
+                <Typography variant="h3" style={{ color: '#FCA5A5', fontWeight: 'bold' }}>{formatCurrency(outstanding)}</Typography>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Typography variant="caption" style={{ color: colors.textMuted }}>Available</Typography>
+                <Typography variant="h3" style={{ color: colors.white, fontWeight: 'bold' }}>{formatCurrency(available)}</Typography>
+              </View>
+            </View>
+
+            <View style={styles.ccProgressContainer}>
+              <View style={styles.ccProgressBg}>
+                <View style={[styles.ccProgressFill, { width: `${Math.min(usedPercent, 100)}%` }]} />
+              </View>
+              <View style={styles.ccProgressLabels}>
+                <Typography variant="caption" style={{ color: colors.textMuted, fontSize: 10 }}>
+                  {formatCurrency(available)} available • {Math.round(usedPercent)}% used
+                </Typography>
+                <Typography variant="caption" style={{ color: colors.textMuted, fontSize: 10 }}>
+                  Limit {formatCurrency(limit)}
+                </Typography>
+              </View>
+            </View>
+
+            {item.billPaymentDate && (
+              <View style={styles.ccBillInfo}>
+                <View style={styles.ccBillDateContainer}>
+                  <Ionicons name="calendar-outline" size={16} color={colors.textMuted} style={{ marginRight: 8 }} />
+                  <View>
+                    <Typography variant="caption" style={{ color: colors.textMuted, fontSize: 10, textTransform: 'uppercase' }}>Next Bill</Typography>
+                    <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>
+                      {new Date(item.billPaymentDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </Typography>
+                  </View>
+                </View>
+                <View style={styles.ccDaysLeftChip}>
+                  <Typography variant="caption" style={{ color: '#60A5FA', fontWeight: 'bold' }}>{daysLeftText}</Typography>
+                </View>
+              </View>
+            )}
+          </GlassCard>
+        </TouchableOpacity>
       </Animated.View>
     );
   };
 
   const renderOtherAccount = ({ item, index }: { item: Account, index: number }) => (
     <Animated.View entering={FadeInDown.delay(index * 100).duration(400)}>
-      <GlassCard style={styles.bankCard}>
-        <View style={styles.bankHeader}>
-          <View style={[styles.bankIconContainer, { backgroundColor: item.color || colors.primary }]}>
-            <Ionicons name={(item.icon as any) || 'wallet'} size={24} color={colors.white} />
+      <TouchableOpacity activeOpacity={0.9} onPress={() => setSelectedAccount(item)}>
+        <GlassCard style={styles.bankCard}>
+          <View style={styles.bankHeader}>
+            <View style={[styles.bankIconContainer, { backgroundColor: item.color || colors.primary }]}>
+              <Ionicons name={(item.icon as any) || 'wallet'} size={24} color={colors.white} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold' }}>{item.name}</Typography>
+              <Typography variant="caption" style={{ color: colors.textMuted }}>{item.type}</Typography>
+            </View>
+            {item.last4Digits && (
+              <Typography variant="caption" style={{ color: colors.textMuted }}>
+                ••• {item.last4Digits}
+              </Typography>
+            )}
           </View>
-          <View style={{ flex: 1 }}>
-            <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold' }}>{item.name}</Typography>
-            <Typography variant="caption" style={{ color: colors.textMuted }}>{item.type}</Typography>
+          <View style={styles.bankBalanceContainer}>
+            <Typography variant="caption" style={{ color: colors.textMuted }}>Current Balance</Typography>
+            <Typography variant="h2" style={{ color: colors.white, fontWeight: 'bold' }}>{formatCurrency(item.balance)}</Typography>
           </View>
-          {item.last4Digits && (
-            <Typography variant="caption" style={{ color: colors.textMuted }}>
-              ••• {item.last4Digits}
-            </Typography>
-          )}
-        </View>
-        <View style={styles.bankBalanceContainer}>
-          <Typography variant="caption" style={{ color: colors.textMuted }}>Current Balance</Typography>
-          <Typography variant="h2" style={{ color: colors.white, fontWeight: 'bold' }}>{formatCurrency(item.balance)}</Typography>
-        </View>
-      </GlassCard>
+        </GlassCard>
+      </TouchableOpacity>
     </Animated.View>
   );
+
+  const handleDeleteAccount = (id: string) => {
+    Alert.alert(
+      "Delete Account",
+      "Are you sure you want to delete this account? All associated transactions will be kept, but the account will be removed.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive", 
+          onPress: () => {
+            deleteAccount(id);
+            setSelectedAccount(null);
+          }
+        }
+      ]
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -256,6 +279,78 @@ export const AccountsScreen = () => {
       >
         <Ionicons name="add" size={32} color={colors.white} />
       </TouchableOpacity>
+
+      {/* Account Details Modal */}
+      <Modal
+        visible={!!selectedAccount}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedAccount(null)}
+      >
+        <TouchableWithoutFeedback onPress={() => setSelectedAccount(null)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.bottomSheetContent}>
+                <View style={styles.bottomSheetCard}>
+                  {selectedAccount && (
+                    <>
+                      <View style={styles.modalHeader}>
+                        <View style={[styles.modalIconContainer, { backgroundColor: selectedAccount.color || colors.primary }]}>
+                          <Ionicons name={(selectedAccount.icon as any) || 'wallet'} size={28} color={colors.white} />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <Typography variant="h3" style={{ color: colors.white }}>{selectedAccount.name}</Typography>
+                          <Typography variant="caption" style={{ color: colors.textMuted }}>
+                            {selectedAccount.type} {selectedAccount.bankName ? `• ${selectedAccount.bankName}` : ''}
+                          </Typography>
+                        </View>
+                      </View>
+
+                      <View style={styles.modalDetailsRow}>
+                        <View style={styles.modalDetailBox}>
+                          <Typography variant="caption" style={{ color: colors.textMuted }}>Balance</Typography>
+                          <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold' }}>
+                            {formatCurrency(selectedAccount.balance)}
+                          </Typography>
+                        </View>
+                        {selectedAccount.type === 'CREDIT_CARD' && (
+                          <View style={styles.modalDetailBox}>
+                            <Typography variant="caption" style={{ color: colors.textMuted }}>Total Limit</Typography>
+                            <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold' }}>
+                              {formatCurrency(selectedAccount.creditLimit || 0)}
+                            </Typography>
+                          </View>
+                        )}
+                      </View>
+
+                      <View style={styles.modalActions}>
+                        <TouchableOpacity 
+                          style={styles.modalBtnEdit}
+                          onPress={() => {
+                            navigation.navigate('AddAccount', { accountId: selectedAccount.id });
+                            setSelectedAccount(null);
+                          }}
+                        >
+                          <Ionicons name="pencil-outline" size={20} color={colors.white} style={{ marginRight: 8 }} />
+                          <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>Edit</Typography>
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity 
+                          style={styles.modalBtnDelete}
+                          onPress={() => handleDeleteAccount(selectedAccount.id)}
+                        >
+                          <Ionicons name="trash-outline" size={20} color="#EF4444" style={{ marginRight: 8 }} />
+                          <Typography variant="body" style={{ color: '#EF4444', fontWeight: 'bold' }}>Delete</Typography>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  )}
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 };
@@ -436,5 +531,70 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 8,
     elevation: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    justifyContent: 'flex-end',
+  },
+  bottomSheetContent: {
+    width: '100%',
+    padding: 16,
+    paddingBottom: 32,
+  },
+  bottomSheetCard: {
+    backgroundColor: '#1E293B',
+    borderRadius: 24,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  modalIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  modalDetailsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 24,
+  },
+  modalDetailBox: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalBtnEdit: {
+    flex: 2,
+    flexDirection: 'row',
+    backgroundColor: colors.primary,
+    paddingVertical: 14,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalBtnDelete: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    paddingVertical: 14,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

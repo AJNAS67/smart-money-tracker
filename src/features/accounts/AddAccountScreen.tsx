@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -48,11 +48,19 @@ type AccountFormData = z.infer<typeof accountSchema>;
 
 export const AddAccountScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute<any>();
+  const accountId = route.params?.accountId;
+  const accounts = useStore(state => state.accounts);
   const addAccount = useStore(state => state.addAccount);
+  const updateAccount = useStore(state => state.updateAccount);
+  
+  const existingAccount = accountId ? accounts.find(a => a.id === accountId) : null;
+  const isEditing = !!existingAccount;
+
   const [showBillDatePicker, setShowBillDatePicker] = useState(false);
   const [showDueDatePicker, setShowDueDatePicker] = useState(false);
 
-  const { control, handleSubmit, watch, formState: { errors }, setError } = useForm<AccountFormData>({
+  const { control, handleSubmit, watch, formState: { errors }, setError, reset } = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
     defaultValues: {
       name: '',
@@ -68,6 +76,24 @@ export const AddAccountScreen = () => {
       remarks: '',
     },
   });
+
+  useEffect(() => {
+    if (isEditing && existingAccount) {
+      reset({
+        name: existingAccount.name,
+        type: ACCOUNT_TYPES.includes(existingAccount.type) ? existingAccount.type : 'OTHER',
+        customType: !ACCOUNT_TYPES.includes(existingAccount.type) ? existingAccount.type : '',
+        balance: existingAccount.balance.toString(),
+        creditLimit: existingAccount.creditLimit?.toString() || '',
+        billPaymentDate: existingAccount.billPaymentDate ? new Date(existingAccount.billPaymentDate) : new Date(),
+        dueDate: existingAccount.dueDate ? new Date(existingAccount.dueDate) : new Date(),
+        bankName: existingAccount.bankName || '',
+        last4Digits: existingAccount.last4Digits || '',
+        expiryDate: existingAccount.expiryDate || '',
+        remarks: existingAccount.remarks || '',
+      });
+    }
+  }, [isEditing, existingAccount, reset]);
 
   const selectedType = watch('type');
 
@@ -90,7 +116,7 @@ export const AddAccountScreen = () => {
     const accountColor = matchedBank?.color || colors.primary;
     const accountIcon = matchedBank?.icon || (finalType === 'CASH' || finalType === 'WALLET' ? 'wallet' : finalType === 'CREDIT_CARD' ? 'card' : 'business');
 
-    addAccount({
+    const accountData = {
       name: data.name,
       type: finalType,
       balance: selectedType === 'CREDIT_CARD' ? 0 : parseFloat(data.balance || '0'),
@@ -103,13 +129,19 @@ export const AddAccountScreen = () => {
       remarks: data.remarks,
       icon: accountIcon,
       color: accountColor,
-    });
+    };
+
+    if (isEditing) {
+      updateAccount(accountId, accountData);
+    } else {
+      addAccount(accountData);
+    }
     navigation.goBack();
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Typography variant="h2" style={styles.title}>Add New Account</Typography>
+      <Typography variant="h2" style={styles.title}>{isEditing ? 'Edit Account' : 'Add New Account'}</Typography>
       
       <Controller
         control={control}
@@ -368,7 +400,7 @@ export const AddAccountScreen = () => {
       <View style={styles.spacer} />
 
       <GradientButton
-        title="Create Account"
+        title={isEditing ? "Save Changes" : "Create Account"}
         onPress={handleSubmit(onSubmit)}
       />
     </ScrollView>
