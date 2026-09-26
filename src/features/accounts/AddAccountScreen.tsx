@@ -16,6 +16,20 @@ import { Ionicons } from '@expo/vector-icons';
 
 const ACCOUNT_TYPES = ['BANK', 'CREDIT_CARD', 'INVESTMENT', 'WALLET', 'OTHER'];
 
+const POPULAR_BANKS = [
+  { name: 'HDFC Bank', color: '#004C8F', icon: 'business' },
+  { name: 'ICICI Bank', color: '#F18121', icon: 'business' },
+  { name: 'Axis Bank', color: '#97144D', icon: 'business' },
+  { name: 'State Bank of India', color: '#0065B3', icon: 'business' },
+  { name: 'Kotak Mahindra', color: '#ED1C24', icon: 'business' },
+  { name: 'IndusInd Bank', color: '#7A2633', icon: 'business' },
+  { name: 'Bank of Baroda', color: '#FF6600', icon: 'business' },
+  { name: 'Punjab National Bank', color: '#A32020', icon: 'business' },
+  { name: 'Canara Bank', color: '#0E70B7', icon: 'business' },
+  { name: 'Union Bank of India', color: '#E31837', icon: 'business' },
+  { name: 'Bank of India', color: '#003399', icon: 'business' },
+];
+
 const accountSchema = z.object({
   name: z.string().min(1, 'Account name is required'),
   type: z.string().min(1, 'Account type is required'),
@@ -68,6 +82,14 @@ export const AddAccountScreen = () => {
     }
 
     const finalType = data.type === 'OTHER' && data.customType ? data.customType : data.type;
+    
+    // Find if the entered bank name matches our popular banks to use its brand color
+    const matchedBank = POPULAR_BANKS.find(b => b.name.toLowerCase() === data.bankName?.toLowerCase() || 
+                                                (data.name && b.name.toLowerCase() === data.name.toLowerCase()));
+                                                
+    const accountColor = matchedBank?.color || colors.primary;
+    const accountIcon = matchedBank?.icon || (finalType === 'CASH' || finalType === 'WALLET' ? 'wallet' : finalType === 'CREDIT_CARD' ? 'card' : 'business');
+
     addAccount({
       name: data.name,
       type: finalType,
@@ -79,8 +101,8 @@ export const AddAccountScreen = () => {
       last4Digits: data.last4Digits,
       expiryDate: data.expiryDate,
       remarks: data.remarks,
-      icon: finalType === 'CASH' || finalType === 'WALLET' ? 'wallet' : finalType === 'CREDIT_CARD' ? 'card' : 'business',
-      color: colors.primary,
+      icon: accountIcon,
+      color: accountColor,
     });
     navigation.goBack();
   };
@@ -131,13 +153,26 @@ export const AddAccountScreen = () => {
           control={control}
           name="bankName"
           render={({ field: { onChange, value } }) => (
-            <Input
-              label="Bank Name"
-              placeholder="e.g. Chase Bank"
-              value={value || ''}
-              onChangeText={onChange}
-              error={errors.bankName?.message}
-            />
+            <View style={{ marginBottom: 16 }}>
+              <Input
+                label="Bank Name"
+                placeholder="e.g. HDFC Bank"
+                value={value || ''}
+                onChangeText={onChange}
+                error={errors.bankName?.message}
+              />
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }} contentContainerStyle={{ gap: 8 }}>
+                {POPULAR_BANKS.map(bank => (
+                  <TouchableOpacity 
+                    key={bank.name}
+                    style={[styles.bankPill, { borderColor: bank.color + '40', backgroundColor: bank.color + '15' }]}
+                    onPress={() => onChange(bank.name)}
+                  >
+                    <Typography variant="caption" style={{ color: bank.color, fontWeight: 'bold' }}>{bank.name}</Typography>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
           )}
         />
       )}
@@ -386,6 +421,12 @@ const styles = StyleSheet.create({
   pillTextActive: {
     color: colors.white,
     fontWeight: 'bold',
+  },
+  bankPill: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   section: {
     marginBottom: 24,
