@@ -299,10 +299,19 @@ export const AccountsScreen = () => {
                         <View style={{ flex: 1 }}>
                           <Typography variant="h3" style={{ color: colors.white }}>{selectedAccount.name}</Typography>
                           <Typography variant="caption" style={{ color: colors.textMuted }}>
-                            {selectedAccount.type} {selectedAccount.bankName ? `• ${selectedAccount.bankName}` : ''}
+                            {selectedAccount.type} 
+                            {selectedAccount.bankName ? ` • ${selectedAccount.bankName}` : ''}
+                            {selectedAccount.last4Digits ? ` • ${selectedAccount.last4Digits}` : ''}
                           </Typography>
                         </View>
                       </View>
+
+                      {selectedAccount.remarks ? (
+                        <View style={{ width: '100%', marginBottom: 20, backgroundColor: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12 }}>
+                          <Typography variant="caption" style={{ color: colors.textMuted, marginBottom: 4 }}>Remarks</Typography>
+                          <Typography variant="body" style={{ color: colors.white }}>{selectedAccount.remarks}</Typography>
+                        </View>
+                      ) : null}
 
                       <View style={styles.modalDetailsRow}>
                         <View style={styles.modalDetailBox}>

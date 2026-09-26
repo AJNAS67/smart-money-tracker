@@ -15,6 +15,13 @@ export const initDatabase = async () => {
         name TEXT NOT NULL,
         type TEXT NOT NULL,
         balance REAL NOT NULL DEFAULT 0,
+        creditLimit REAL,
+        billPaymentDate INTEGER,
+        dueDate INTEGER,
+        bankName TEXT,
+        last4Digits TEXT,
+        expiryDate TEXT,
+        remarks TEXT,
         icon TEXT,
         color TEXT,
         createdAt INTEGER NOT NULL,
@@ -63,6 +70,43 @@ export const initDatabase = async () => {
       );
     `);
     
+    // Add columns dynamically if the table was created before the schema was updated
+    try {
+      await db.execAsync(`
+        ALTER TABLE accounts ADD COLUMN creditLimit REAL;
+      `);
+    } catch (e) {}
+    try {
+      await db.execAsync(`
+        ALTER TABLE accounts ADD COLUMN billPaymentDate INTEGER;
+      `);
+    } catch (e) {}
+    try {
+      await db.execAsync(`
+        ALTER TABLE accounts ADD COLUMN dueDate INTEGER;
+      `);
+    } catch (e) {}
+    try {
+      await db.execAsync(`
+        ALTER TABLE accounts ADD COLUMN bankName TEXT;
+      `);
+    } catch (e) {}
+    try {
+      await db.execAsync(`
+        ALTER TABLE accounts ADD COLUMN last4Digits TEXT;
+      `);
+    } catch (e) {}
+    try {
+      await db.execAsync(`
+        ALTER TABLE accounts ADD COLUMN expiryDate TEXT;
+      `);
+    } catch (e) {}
+    try {
+      await db.execAsync(`
+        ALTER TABLE accounts ADD COLUMN remarks TEXT;
+      `);
+    } catch (e) {}
+
     console.log('Database initialized successfully');
   } catch (error) {
     console.error('Error initializing database:', error);

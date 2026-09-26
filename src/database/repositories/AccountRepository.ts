@@ -16,9 +16,25 @@ export class AccountRepository {
     const now = Date.now();
     
     db.runSync(
-      `INSERT INTO accounts (id, name, type, balance, icon, color, createdAt, updatedAt) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, account.name, account.type, account.balance, account.icon || null, account.color || null, now, now]
+      `INSERT INTO accounts (id, name, type, balance, creditLimit, billPaymentDate, dueDate, bankName, last4Digits, expiryDate, remarks, icon, color, createdAt, updatedAt) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        id, 
+        account.name, 
+        account.type, 
+        account.balance, 
+        account.creditLimit || null, 
+        account.billPaymentDate || null, 
+        account.dueDate || null, 
+        account.bankName || null, 
+        account.last4Digits || null, 
+        account.expiryDate || null, 
+        account.remarks || null, 
+        account.icon || null, 
+        account.color || null, 
+        now, 
+        now
+      ]
     );
 
     return { ...account, id, createdAt: now, updatedAt: now };
@@ -32,8 +48,23 @@ export class AccountRepository {
     const updated = { ...current, ...updates, updatedAt: now };
 
     db.runSync(
-      `UPDATE accounts SET name = ?, type = ?, balance = ?, icon = ?, color = ?, updatedAt = ? WHERE id = ?`,
-      [updated.name, updated.type, updated.balance, updated.icon || null, updated.color || null, now, id]
+      `UPDATE accounts SET name = ?, type = ?, balance = ?, creditLimit = ?, billPaymentDate = ?, dueDate = ?, bankName = ?, last4Digits = ?, expiryDate = ?, remarks = ?, icon = ?, color = ?, updatedAt = ? WHERE id = ?`,
+      [
+        updated.name, 
+        updated.type, 
+        updated.balance, 
+        updated.creditLimit || null, 
+        updated.billPaymentDate || null, 
+        updated.dueDate || null, 
+        updated.bankName || null, 
+        updated.last4Digits || null, 
+        updated.expiryDate || null, 
+        updated.remarks || null, 
+        updated.icon || null, 
+        updated.color || null, 
+        now, 
+        id
+      ]
     );
   }
 
