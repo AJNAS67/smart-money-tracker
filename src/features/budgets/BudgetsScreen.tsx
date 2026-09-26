@@ -46,9 +46,10 @@ export const BudgetsScreen = () => {
     const progressPercent = Math.round(progress * 100);
     
     // Determine color based on progress
-    let progressColor = colors.success;
-    if (progress >= 0.8 && progress < 1) progressColor = colors.warning;
-    if (progress >= 1) progressColor = colors.danger;
+    let progressColor = '#10B981'; // Green
+    if (progress > 0.75 && progress <= 0.90) progressColor = '#F97316'; // Orange
+    if (progress > 0.90 && progress < 1) progressColor = '#EA580C'; // Dark Orange
+    if (progress >= 1) progressColor = '#991B1B'; // Dark Red
 
     return (
       <GlassCard style={styles.budgetCard}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Platform, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useForm, Controller } from 'react-hook-form';
@@ -27,8 +27,13 @@ type TransactionFormData = z.infer<typeof transactionSchema>;
 
 export const AddTransactionScreen = () => {
   const navigation = useNavigation();
-  const { addTransaction, categories, accounts, budgets, transactions } = useStore();
+  const { addTransaction, categories, accounts, budgets, transactions, refreshBudgets, refreshTransactions } = useStore();
   const [showDatePicker, setShowDatePicker] = useState(false);
+
+  useEffect(() => {
+    refreshBudgets();
+    refreshTransactions();
+  }, []);
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
