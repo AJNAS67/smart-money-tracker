@@ -375,8 +375,7 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     height: 200,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: '100%',
     marginBottom: 16,
   },
   filterTabs: {
@@ -397,6 +396,7 @@ const styles = StyleSheet.create({
   },
   barChartContainer: {
     height: 220,
+    width: '100%',
     marginBottom: 8,
   },
   legendContainer: {

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { useStore } from '../../store/useStore';
 import { TransactionType } from '../../database/schema';
@@ -19,6 +20,7 @@ const transactionSchema = z.object({
   categoryId: z.string().min(1, 'Category is required'),
   accountId: z.string().min(1, 'Account is required'),
   note: z.string().optional(),
+  date: z.date(),
 });
 
 type TransactionFormData = z.infer<typeof transactionSchema>;
@@ -26,6 +28,7 @@ type TransactionFormData = z.infer<typeof transactionSchema>;
 export const AddTransactionScreen = () => {
   const navigation = useNavigation();
   const { addTransaction, categories, accounts } = useStore();
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const { control, handleSubmit, watch, setValue, formState: { errors } } = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
@@ -35,6 +38,7 @@ export const AddTransactionScreen = () => {
       categoryId: '',
       accountId: accounts[0]?.id || '',
       note: '',
+      date: new Date(),
     },
   });
 
@@ -48,7 +52,7 @@ export const AddTransactionScreen = () => {
       categoryId: data.categoryId,
       accountId: data.accountId,
       note: data.note,
-      date: Date.now(),
+      date: data.date.getTime(),
     });
     navigation.goBack();
   };
@@ -163,6 +167,40 @@ export const AddTransactionScreen = () => {
         )}
       />
 
+      <Controller
+        control={control}
+        name="date"
+        render={({ field: { onChange, value } }) => (
+          <View style={styles.section}>
+            <Typography variant="caption" style={styles.label}>Date</Typography>
+            <TouchableOpacity 
+              style={styles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Ionicons name="calendar-outline" size={20} color={colors.textMuted} style={styles.chipIcon} />
+              <Typography variant="body" style={{ color: colors.white }}>
+                {value.toLocaleDateString()}
+              </Typography>
+            </TouchableOpacity>
+
+            {showDatePicker && (
+              <DateTimePicker
+                value={value}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                maximumDate={new Date()} // Cannot select future date
+                onChange={(event, selectedDate) => {
+                  setShowDatePicker(Platform.OS === 'ios');
+                  if (selectedDate) {
+                    onChange(selectedDate);
+                  }
+                }}
+              />
+            )}
+          </View>
+        )}
+      />
+
       <View style={styles.spacer} />
 
       <GradientButton
@@ -249,6 +287,15 @@ const styles = StyleSheet.create({
   errorText: {
     color: colors.danger,
     marginTop: 4,
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   spacer: {
     height: 32,
