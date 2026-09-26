@@ -20,9 +20,14 @@ const accountSchema = z.object({
   name: z.string().min(1, 'Account name is required'),
   type: z.string().min(1, 'Account type is required'),
   customType: z.string().optional(),
-  balance: z.string().optional(), // We'll make it optional in schema and validate manually based on type
+  balance: z.string().optional(),
   creditLimit: z.string().optional(),
   billPaymentDate: z.date().optional(),
+  dueDate: z.date().optional(),
+  bankName: z.string().optional(),
+  last4Digits: z.string().optional().refine(val => !val || /^\d{0,4}$/.test(val), 'Must be up to 4 digits'),
+  expiryDate: z.string().optional(),
+  remarks: z.string().optional(),
 });
 
 type AccountFormData = z.infer<typeof accountSchema>;
@@ -30,7 +35,8 @@ type AccountFormData = z.infer<typeof accountSchema>;
 export const AddAccountScreen = () => {
   const navigation = useNavigation();
   const addAccount = useStore(state => state.addAccount);
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showBillDatePicker, setShowBillDatePicker] = useState(false);
+  const [showDueDatePicker, setShowDueDatePicker] = useState(false);
 
   const { control, handleSubmit, watch, formState: { errors }, setError } = useForm<AccountFormData>({
     resolver: zodResolver(accountSchema),
@@ -41,6 +47,11 @@ export const AddAccountScreen = () => {
       balance: '',
       creditLimit: '',
       billPaymentDate: new Date(),
+      dueDate: new Date(),
+      bankName: '',
+      last4Digits: '',
+      expiryDate: '',
+      remarks: '',
     },
   });
 
@@ -63,6 +74,11 @@ export const AddAccountScreen = () => {
       balance: selectedType === 'CREDIT_CARD' ? 0 : parseFloat(data.balance || '0'),
       creditLimit: selectedType === 'CREDIT_CARD' ? parseFloat(data.creditLimit || '0') : undefined,
       billPaymentDate: selectedType === 'CREDIT_CARD' ? data.billPaymentDate?.getTime() : undefined,
+      dueDate: selectedType === 'CREDIT_CARD' ? data.dueDate?.getTime() : undefined,
+      bankName: data.bankName,
+      last4Digits: data.last4Digits,
+      expiryDate: data.expiryDate,
+      remarks: data.remarks,
       icon: finalType === 'CASH' || finalType === 'WALLET' ? 'wallet' : finalType === 'CREDIT_CARD' ? 'card' : 'business',
       color: colors.primary,
     });
@@ -101,8 +117,8 @@ export const AddAccountScreen = () => {
         name="name"
         render={({ field: { onChange, value } }) => (
           <Input
-            label="Account Name"
-            placeholder="e.g. Main Chase Checking"
+            label={selectedType === 'CREDIT_CARD' ? "Card Name" : "Account Name"}
+            placeholder={selectedType === 'CREDIT_CARD' ? "e.g. Chase Sapphire Reserve" : "e.g. Main Chase Checking"}
             value={value}
             onChangeText={onChange}
             error={errors.name?.message}
@@ -110,21 +126,39 @@ export const AddAccountScreen = () => {
         )}
       />
 
-      {selectedType !== 'CREDIT_CARD' ? (
+      {selectedType === 'CREDIT_CARD' && (
         <Controller
           control={control}
-          name="balance"
+          name="bankName"
           render={({ field: { onChange, value } }) => (
             <Input
-              label="Initial Balance (₹)"
-              placeholder="0.00"
-              keyboardType="decimal-pad"
+              label="Bank Name"
+              placeholder="e.g. Chase Bank"
               value={value || ''}
               onChangeText={onChange}
-              error={errors.balance?.message}
+              error={errors.bankName?.message}
             />
           )}
         />
+      )}
+
+      {selectedType !== 'CREDIT_CARD' ? (
+        <>
+          <Controller
+            control={control}
+            name="balance"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                label="Initial Balance (₹)"
+                placeholder="0.00"
+                keyboardType="decimal-pad"
+                value={value || ''}
+                onChangeText={onChange}
+                error={errors.balance?.message}
+              />
+            )}
+          />
+        </>
       ) : (
         <>
           <Controller
@@ -132,7 +166,7 @@ export const AddAccountScreen = () => {
             name="creditLimit"
             render={({ field: { onChange, value } }) => (
               <Input
-                label="Credit Limit (₹)"
+                label="Total Credit Limit (₹)"
                 placeholder="0.00"
                 keyboardType="decimal-pad"
                 value={value || ''}
@@ -142,40 +176,138 @@ export const AddAccountScreen = () => {
             )}
           />
 
-          <Controller
-            control={control}
-            name="billPaymentDate"
-            render={({ field: { onChange, value } }) => (
-              <View style={styles.section}>
-                <Typography variant="caption" style={styles.label}>Bill Payment Date</Typography>
-                <TouchableOpacity 
-                  style={styles.dateButton}
-                  onPress={() => setShowDatePicker(true)}
-                >
-                  <Ionicons name="calendar-outline" size={20} color={colors.textMuted} style={styles.chipIcon} />
-                  <Typography variant="body" style={{ color: colors.white }}>
-                    {value ? value.toLocaleDateString() : 'Select date'}
-                  </Typography>
-                </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 16 }}>
+            <View style={{ flex: 1 }}>
+              <Controller
+                control={control}
+                name="billPaymentDate"
+                render={({ field: { onChange, value } }) => (
+                  <View style={styles.section}>
+                    <Typography variant="caption" style={styles.label}>Bill Date</Typography>
+                    <TouchableOpacity 
+                      style={styles.dateButton}
+                      onPress={() => setShowBillDatePicker(true)}
+                    >
+                      <Ionicons name="calendar-outline" size={20} color={colors.textMuted} style={styles.chipIcon} />
+                      <Typography variant="body" style={{ color: colors.white }}>
+                        {value ? value.toLocaleDateString() : 'Select date'}
+                      </Typography>
+                    </TouchableOpacity>
 
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={value || new Date()}
-                    mode="date"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={(event, selectedDate) => {
-                      setShowDatePicker(Platform.OS === 'ios');
-                      if (selectedDate) {
-                        onChange(selectedDate);
-                      }
-                    }}
-                  />
+                    {showBillDatePicker && (
+                      <DateTimePicker
+                        value={value || new Date()}
+                        mode="date"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={(event, selectedDate) => {
+                          setShowBillDatePicker(Platform.OS === 'ios');
+                          if (selectedDate) {
+                            onChange(selectedDate);
+                          }
+                        }}
+                      />
+                    )}
+                  </View>
                 )}
-              </View>
-            )}
-          />
+              />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Controller
+                control={control}
+                name="dueDate"
+                render={({ field: { onChange, value } }) => (
+                  <View style={styles.section}>
+                    <Typography variant="caption" style={styles.label}>Due Date</Typography>
+                    <TouchableOpacity 
+                      style={styles.dateButton}
+                      onPress={() => setShowDueDatePicker(true)}
+                    >
+                      <Ionicons name="calendar-outline" size={20} color={colors.textMuted} style={styles.chipIcon} />
+                      <Typography variant="body" style={{ color: colors.white }}>
+                        {value ? value.toLocaleDateString() : 'Select date'}
+                      </Typography>
+                    </TouchableOpacity>
+
+                    {showDueDatePicker && (
+                      <DateTimePicker
+                        value={value || new Date()}
+                        mode="date"
+                        display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                        onChange={(event, selectedDate) => {
+                          setShowDueDatePicker(Platform.OS === 'ios');
+                          if (selectedDate) {
+                            onChange(selectedDate);
+                          }
+                        }}
+                      />
+                    )}
+                  </View>
+                )}
+              />
+            </View>
+          </View>
         </>
       )}
+
+      {(selectedType === 'BANK' || selectedType === 'CREDIT_CARD') && (
+        <View style={{ flexDirection: 'row', gap: 16 }}>
+          <View style={{ flex: 1 }}>
+            <Controller
+              control={control}
+              name="last4Digits"
+              render={({ field: { onChange, value } }) => (
+                <Input
+                  label="Last 4 Digits (Optional)"
+                  placeholder="1234"
+                  keyboardType="number-pad"
+                  maxLength={4}
+                  value={value || ''}
+                  onChangeText={onChange}
+                  error={errors.last4Digits?.message}
+                />
+              )}
+            />
+          </View>
+          {selectedType === 'CREDIT_CARD' && (
+            <View style={{ flex: 1 }}>
+              <Controller
+                control={control}
+                name="expiryDate"
+                render={({ field: { onChange, value } }) => (
+                  <Input
+                    label="Expiry Date"
+                    placeholder="MM/YY"
+                    maxLength={5}
+                    value={value || ''}
+                    onChangeText={text => {
+                      let formatted = text.replace(/[^0-9]/g, '');
+                      if (formatted.length > 2) {
+                        formatted = formatted.substring(0, 2) + '/' + formatted.substring(2, 4);
+                      }
+                      onChange(formatted);
+                    }}
+                    error={errors.expiryDate?.message}
+                  />
+                )}
+              />
+            </View>
+          )}
+        </View>
+      )}
+
+      <Controller
+        control={control}
+        name="remarks"
+        render={({ field: { onChange, value } }) => (
+          <Input
+            label="Remarks (Optional)"
+            placeholder="Additional notes"
+            value={value || ''}
+            onChangeText={onChange}
+            error={errors.remarks?.message}
+          />
+        )}
+      />
 
       <Controller
         control={control}

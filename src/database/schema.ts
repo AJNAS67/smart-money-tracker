@@ -10,6 +10,11 @@ export interface Account {
   color?: string;
   creditLimit?: number;
   billPaymentDate?: number;
+  dueDate?: number;
+  bankName?: string;
+  last4Digits?: string;
+  expiryDate?: string;
+  remarks?: string;
   createdAt: number;
   updatedAt: number;
 }
