@@ -7,6 +7,7 @@ import { AccountsScreen } from '../features/accounts/AccountsScreen';
 import { TransactionsScreen } from '../features/transactions/TransactionsScreen';
 import { DashboardScreen } from '../features/dashboard/DashboardScreen';
 import { BudgetsScreen } from '../features/budgets/BudgetsScreen';
+import { VaultsScreen } from '../features/vaults/VaultsScreen';
 
 // Placeholder screens for Phase 2
 const PlaceholderScreen = ({ name }: { name: string }) => (
@@ -14,8 +15,6 @@ const PlaceholderScreen = ({ name }: { name: string }) => (
     <Text style={{ color: colors.text, fontSize: 24, fontFamily: 'Inter-SemiBold' }}>{name}</Text>
   </View>
 );
-
-const Vaults = () => <PlaceholderScreen name="Vaults" />;
 
 const Tab = createBottomTabNavigator();
 
@@ -49,7 +48,7 @@ export const BottomTabs = () => {
       <Tab.Screen name="Accounts" component={AccountsScreen} />
       <Tab.Screen name="Transactions" component={TransactionsScreen} />
       <Tab.Screen name="Budgets" component={BudgetsScreen} />
-      <Tab.Screen name="Vaults" component={Vaults} />
+      <Tab.Screen name="Vaults" component={VaultsScreen} />
     </Tab.Navigator>
   );
 };

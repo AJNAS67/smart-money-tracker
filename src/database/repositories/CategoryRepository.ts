@@ -1,4 +1,4 @@
-import { db } from '../database';
+import { db } from '../connection';
 import { Category } from '../schema';
 import * as Crypto from 'expo-crypto';
 
