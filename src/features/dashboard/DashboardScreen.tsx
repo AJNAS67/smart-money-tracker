@@ -18,6 +18,7 @@ export const DashboardScreen = () => {
   const { totalBalance, transactions, categories, accounts, refreshAccounts, refreshTransactions, refreshCategories } = useStore();
   const navigation = useNavigation<any>();
   const [timeFilter, setTimeFilter] = useState<'WEEK' | 'MONTH' | 'YEAR' | 'ALL'>('MONTH');
+  const [dismissedBills, setDismissedBills] = useState<string[]>([]);
 
   useEffect(() => {
     refreshAccounts();
@@ -105,7 +106,7 @@ export const DashboardScreen = () => {
     const diffTime = nextDueDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays <= 15) {
+    if (diffDays <= 15 && !dismissedBills.includes(card.id)) {
       return { ...card, diffDays, dueDay };
     }
     return null;
@@ -168,6 +169,9 @@ export const DashboardScreen = () => {
                   Your {bill!.name} bill is due {bill!.diffDays === 0 ? 'today' : `in ${bill!.diffDays} days`} (on the {bill!.dueDay}th).
                 </Typography>
               </View>
+              <TouchableOpacity onPress={() => setDismissedBills([...dismissedBills, bill!.id])} style={{ padding: 4 }}>
+                <Ionicons name="close" size={20} color={colors.textMuted} />
+              </TouchableOpacity>
             </GlassCard>
           ))}
         </View>
