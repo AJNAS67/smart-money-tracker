@@ -16,6 +16,7 @@ export const AccountsScreen = () => {
   const { accounts, totalBalance, refreshAccounts, deleteAccount } = useStore();
   const navigation = useNavigation<any>();
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
+  const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
 
   useEffect(() => {
     refreshAccounts();
@@ -155,21 +156,18 @@ export const AccountsScreen = () => {
   );
 
   const handleDeleteAccount = (id: string) => {
-    Alert.alert(
-      "Delete Account",
-      "Are you sure you want to delete this account? All associated transactions will be kept, but the account will be removed.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
-          style: "destructive", 
-          onPress: () => {
-            deleteAccount(id);
-            setSelectedAccount(null);
-          }
-        }
-      ]
-    );
+    const acc = accounts.find(a => a.id === id);
+    if (acc) {
+      setAccountToDelete(acc);
+      setSelectedAccount(null); // Close the detail modal
+    }
+  };
+
+  const confirmDelete = () => {
+    if (accountToDelete) {
+      deleteAccount(accountToDelete.id);
+      setAccountToDelete(null);
+    }
   };
 
   return (
@@ -308,8 +306,10 @@ export const AccountsScreen = () => {
 
                       <View style={styles.modalDetailsRow}>
                         <View style={styles.modalDetailBox}>
-                          <Typography variant="caption" style={{ color: colors.textMuted }}>Balance</Typography>
-                          <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold' }}>
+                          <Typography variant="caption" style={{ color: colors.textMuted }}>
+                            {selectedAccount.type === 'CREDIT_CARD' ? 'Outstanding' : 'Balance'}
+                          </Typography>
+                          <Typography variant="subtitle" style={{ color: selectedAccount.type === 'CREDIT_CARD' ? '#FCA5A5' : colors.white, fontWeight: 'bold' }}>
                             {formatCurrency(selectedAccount.balance)}
                           </Typography>
                         </View>
@@ -345,6 +345,71 @@ export const AccountsScreen = () => {
                       </View>
                     </>
                   )}
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={!!accountToDelete}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setAccountToDelete(null)}
+      >
+        <TouchableWithoutFeedback onPress={() => setAccountToDelete(null)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.bottomSheetContent}>
+                <View style={[styles.bottomSheetCard, { alignItems: 'center' }]}>
+                  
+                  {/* Warning Indicator */}
+                  <View style={styles.modalWarningIconContainer}>
+                    <Ionicons name="trash" size={28} color="#EF4444" />
+                  </View>
+                  
+                  {/* Micro-copy */}
+                  <Typography variant="h3" color={colors.white} style={styles.modalTitle}>Delete Account?</Typography>
+                  <Typography variant="body" align="center" style={styles.modalText}>
+                    This will permanently remove this account. All associated transactions will be kept, but the account will be gone.
+                  </Typography>
+
+                  {/* Account Summary Card */}
+                  {accountToDelete && (
+                    <View style={styles.previewCard}>
+                      <View style={[styles.previewIconContainer, { backgroundColor: accountToDelete.color || colors.primary }]}>
+                        <Ionicons name={(accountToDelete.icon as any) || 'wallet'} size={20} color={colors.white} />
+                      </View>
+                      <View style={styles.previewInfo}>
+                        <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>
+                          {accountToDelete.name}
+                        </Typography>
+                        <Typography variant="caption" style={{ color: colors.textMuted, marginTop: 2 }}>
+                          {accountToDelete.type}
+                        </Typography>
+                      </View>
+                      <Typography variant="subtitle" style={{ color: colors.white, fontWeight: 'bold' }}>
+                        {formatCurrency(accountToDelete.balance)}
+                      </Typography>
+                    </View>
+                  )}
+                  
+                  {/* Action Buttons */}
+                  <View style={styles.modalActionsVertical}>
+                    <TouchableOpacity 
+                      style={styles.modalButtonDelete}
+                      onPress={confirmDelete}
+                    >
+                      <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>Delete Account</Typography>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.modalButtonCancel}
+                      onPress={() => setAccountToDelete(null)}
+                    >
+                      <Typography variant="body" style={{ color: colors.white }}>Cancel</Typography>
+                    </TouchableOpacity>
+                  </View>
                 </View>
               </View>
             </TouchableWithoutFeedback>
@@ -595,6 +660,70 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalWarningIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    marginBottom: 8,
+    fontWeight: 'bold',
+  },
+  modalText: {
+    color: colors.textMuted,
+    marginBottom: 24,
+    lineHeight: 20,
+    paddingHorizontal: 8,
+  },
+  previewCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    padding: 16,
+    backgroundColor: '#0F172A',
+    borderRadius: 16,
+    marginBottom: 28,
+    borderWidth: 1,
+    borderColor: '#2D3748',
+  },
+  previewIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  previewInfo: {
+    flex: 1,
+  },
+  modalActionsVertical: {
+    width: '100%',
+    gap: 12,
+  },
+  modalButtonDelete: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 14,
+    backgroundColor: '#EF4444',
+    alignItems: 'center',
+    shadowColor: '#EF4444',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  modalButtonCancel: {
+    width: '100%',
+    paddingVertical: 16,
+    borderRadius: 14,
+    backgroundColor: 'transparent',
     alignItems: 'center',
   },
 });

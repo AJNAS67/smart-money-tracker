@@ -132,11 +132,24 @@ export const AddAccountScreen = () => {
     };
 
     if (isEditing) {
-      updateAccount(accountId, accountData);
+      Alert.alert(
+        "Save Changes",
+        "Are you sure you want to save these changes to your account?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Save", 
+            onPress: () => {
+              updateAccount(accountId, accountData);
+              navigation.goBack();
+            }
+          }
+        ]
+      );
     } else {
       addAccount(accountData);
+      navigation.goBack();
     }
-    navigation.goBack();
   };
 
   return (
