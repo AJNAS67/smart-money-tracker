@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../../store/useStore';
 import { Typography } from '../../components/common/Typography';
 import { GlassCard } from '../../components/glass/GlassCard';

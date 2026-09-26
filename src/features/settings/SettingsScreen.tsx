@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, Switch, Alert, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Sharing from 'expo-sharing';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 import { useStore } from '../../store/useStore';
 import { Typography } from '../../components/common/Typography';
@@ -12,11 +13,20 @@ import { colors } from '../../theme/colors';
 import { SettingsService } from '../../services/SettingsService';
 
 export const SettingsScreen = () => {
-  const { isAppLocked, hasPinSetup, setAppLock } = useStore();
+  const { isAppLocked, hasPinSetup, setAppLock, isBiometricEnabled, toggleBiometric } = useStore();
   const [isSettingPin, setIsSettingPin] = useState(false);
+  const [hasBiometricHardware, setHasBiometricHardware] = useState(false);
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [error, setError] = useState('');
+
+  React.useEffect(() => {
+    (async () => {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      setHasBiometricHardware(compatible && enrolled);
+    })();
+  }, []);
 
   const togglePinLock = async (value: boolean) => {
     if (value) {
@@ -97,6 +107,20 @@ export const SettingsScreen = () => {
             trackColor={{ false: 'rgba(255,255,255,0.1)', true: colors.primary }}
           />
         </View>
+
+        {isAppLocked && hasBiometricHardware && (
+          <View style={[styles.row, { marginTop: 16 }]}>
+            <View>
+              <Typography style={{ color: colors.text }}>Biometric Unlock</Typography>
+              <Typography variant="caption" style={{ color: colors.textMuted }}>Use fingerprint or face to unlock</Typography>
+            </View>
+            <Switch
+              value={isBiometricEnabled}
+              onValueChange={toggleBiometric}
+              trackColor={{ false: 'rgba(255,255,255,0.1)', true: colors.primary }}
+            />
+          </View>
+        )}
 
         {isSettingPin && (
           <View style={styles.pinSetupContainer}>

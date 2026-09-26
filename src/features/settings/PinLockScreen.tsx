@@ -1,22 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 import { useStore } from '../../store/useStore';
 import { Typography } from '../../components/common/Typography';
 import { colors } from '../../theme/colors';
 
 export const PinLockScreen = () => {
-  const { unlockSession } = useStore();
+  const { unlockSession, pinLength, resetAppLock, isBiometricEnabled } = useStore();
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (pin.length === 4) {
+    if (pin.length === pinLength) {
       handleVerify();
     }
-  }, [pin]);
+  }, [pin, pinLength]);
+
+  useEffect(() => {
+    if (isBiometricEnabled) {
+      handleBiometricAuth();
+    }
+  }, [isBiometricEnabled]);
+
+  const handleBiometricAuth = async () => {
+    const result = await LocalAuthentication.authenticateAsync({
+      promptMessage: 'Unlock MoneyFlow',
+      fallbackLabel: 'Use PIN',
+    });
+    
+    if (result.success) {
+      unlockSession(); // Unlocks the session using biometric bypass (pin undefined)
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    }
+  };
 
   const handleVerify = async () => {
     const success = await unlockSession(pin);
@@ -31,7 +50,7 @@ export const PinLockScreen = () => {
   };
 
   const handleKeyPress = (num: string) => {
-    if (pin.length < 4) {
+    if (pin.length < pinLength) {
       setPin(prev => prev + num);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
@@ -64,7 +83,7 @@ export const PinLockScreen = () => {
       </View>
 
       <View style={styles.pinDotsContainer}>
-        {[0, 1, 2, 3].map(i => (
+        {Array.from({ length: pinLength }).map((_, i) => (
           <View
             key={i}
             style={[
@@ -87,13 +106,35 @@ export const PinLockScreen = () => {
           {['7', '8', '9'].map(renderDialButton)}
         </View>
         <View style={styles.dialRow}>
-          <View style={styles.dialButtonEmpty} />
+          {isBiometricEnabled ? (
+            <TouchableOpacity style={styles.dialButton} onPress={handleBiometricAuth}>
+              <Ionicons name="finger-print" size={28} color={colors.primary} />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.dialButtonEmpty} />
+          )}
           {renderDialButton('0')}
           <TouchableOpacity style={styles.dialButton} onPress={handleDelete}>
             <Ionicons name="backspace-outline" size={28} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
+
+      <TouchableOpacity 
+        style={styles.resetContainer}
+        onPress={() => {
+          Alert.alert(
+            'Reset PIN',
+            'Are you sure you want to remove the PIN lock? (For testing/recovery only)',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Reset', style: 'destructive', onPress: resetAppLock }
+            ]
+          );
+        }}
+      >
+        <Typography variant="caption" style={styles.resetText}>Forgot PIN? Reset App Lock</Typography>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -157,5 +198,13 @@ const styles = StyleSheet.create({
   },
   dialText: {
     color: colors.white,
+  },
+  resetContainer: {
+    marginTop: 48,
+    padding: 16,
+  },
+  resetText: {
+    color: colors.danger,
+    textDecorationLine: 'underline',
   },
 });

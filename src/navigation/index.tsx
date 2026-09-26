@@ -14,7 +14,13 @@ const Stack = createNativeStackNavigator();
 export const RootNavigator = () => {
   return (
     <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false, presentation: 'modal' }}>
+      <Stack.Navigator 
+        screenOptions={{ 
+          headerShown: false, 
+          presentation: 'modal',
+          animation: 'slide_from_bottom'
+        }}
+      >
         <Stack.Screen name="MainTabs" component={BottomTabs} />
         <Stack.Screen name="AddAccount" component={AddAccountScreen} />
         <Stack.Screen name="AddTransaction" component={AddTransactionScreen} />

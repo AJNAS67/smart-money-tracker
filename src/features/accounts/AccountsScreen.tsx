@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../../store/useStore';
@@ -24,18 +25,20 @@ export const AccountsScreen = () => {
   };
 
   const renderAccount = ({ item }: { item: Account }) => (
-    <GlassCard style={styles.accountCard}>
-      <View style={styles.accountIconContainer}>
-        <Ionicons name={(item.icon as any) || 'wallet'} size={24} color={item.color || colors.primary} />
-      </View>
-      <View style={styles.accountInfo}>
-        <Typography variant="subtitle" style={{ color: colors.text }}>{item.name}</Typography>
-        <Typography variant="caption">{item.type}</Typography>
-      </View>
-      <View style={styles.accountBalance}>
-        <Typography variant="subtitle" align="right">{formatCurrency(item.balance)}</Typography>
-      </View>
-    </GlassCard>
+    <Animated.View entering={FadeInDown.delay(item.id ? 100 : 0).duration(400)}>
+      <GlassCard style={styles.accountCard}>
+        <View style={styles.accountIconContainer}>
+          <Ionicons name={(item.icon as any) || 'wallet'} size={24} color={item.color || colors.primary} />
+        </View>
+        <View style={styles.accountInfo}>
+          <Typography variant="subtitle" style={{ color: colors.text }}>{item.name}</Typography>
+          <Typography variant="caption">{item.type}</Typography>
+        </View>
+        <View style={styles.accountBalance}>
+          <Typography variant="subtitle" align="right">{formatCurrency(item.balance)}</Typography>
+        </View>
+      </GlassCard>
+    </Animated.View>
   );
 
   return (

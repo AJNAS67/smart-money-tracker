@@ -5,6 +5,7 @@ import { AccountRepository, TransactionRepository, CategoryRepository, BudgetRep
 
 const PIN_KEY = 'moneyflow_app_pin';
 const IS_LOCKED_KEY = 'moneyflow_is_locked';
+const IS_BIOMETRIC_KEY = 'moneyflow_is_biometric_enabled';
 
 export class SettingsService {
   static async setPin(pin: string): Promise<void> {
@@ -14,6 +15,11 @@ export class SettingsService {
   static async verifyPin(pin: string): Promise<boolean> {
     const storedPin = await SecureStore.getItemAsync(PIN_KEY);
     return storedPin === pin;
+  }
+
+  static async getPinLength(): Promise<number> {
+    const storedPin = await SecureStore.getItemAsync(PIN_KEY);
+    return storedPin ? storedPin.length : 4;
   }
 
   static async hasPinSetup(): Promise<boolean> {
@@ -32,6 +38,15 @@ export class SettingsService {
   static async isAppLocked(): Promise<boolean> {
     const isLocked = await SecureStore.getItemAsync(IS_LOCKED_KEY);
     return isLocked === 'true';
+  }
+
+  static async setBiometricEnabled(enabled: boolean): Promise<void> {
+    await SecureStore.setItemAsync(IS_BIOMETRIC_KEY, enabled ? 'true' : 'false');
+  }
+
+  static async isBiometricEnabled(): Promise<boolean> {
+    const isEnabled = await SecureStore.getItemAsync(IS_BIOMETRIC_KEY);
+    return isEnabled === 'true';
   }
 
   static async exportDatabase(): Promise<string> {

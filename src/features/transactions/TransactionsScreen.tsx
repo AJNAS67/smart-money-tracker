@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { View, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useStore } from '../../store/useStore';
@@ -30,8 +31,9 @@ export const TransactionsScreen = () => {
     const isIncome = item.type === 'INCOME';
 
     return (
-      <GlassCard style={styles.transactionCard}>
-        <View style={[styles.iconContainer, { backgroundColor: category?.color || colors.primary }]}>
+      <Animated.View entering={FadeInDown.delay(item.id ? 100 : 0).duration(400)}>
+        <GlassCard style={styles.transactionCard}>
+          <View style={[styles.iconContainer, { backgroundColor: category?.color || colors.primary }]}>
           <Ionicons name={(category?.icon as any) || 'cash-outline'} size={24} color={colors.white} />
         </View>
         <View style={styles.infoContainer}>
@@ -49,8 +51,9 @@ export const TransactionsScreen = () => {
           <TouchableOpacity onPress={() => deleteTransaction(item.id)} style={styles.deleteButton}>
             <Ionicons name="trash-outline" size={16} color={colors.danger} />
           </TouchableOpacity>
-        </View>
-      </GlassCard>
+          </View>
+        </GlassCard>
+      </Animated.View>
     );
   };
 

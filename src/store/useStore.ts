@@ -15,11 +15,15 @@ interface FinanceState {
   isAppLocked: boolean;
   hasPinSetup: boolean;
   isUnlockedSession: boolean;
+  pinLength: number;
+  isBiometricEnabled: boolean;
   
   // Actions
   initializeSecurity: () => Promise<void>;
-  unlockSession: (pin: string) => Promise<boolean>;
+  unlockSession: (pin?: string) => Promise<boolean>;
   setAppLock: (pin: string | null) => Promise<void>;
+  resetAppLock: () => Promise<void>;
+  toggleBiometric: (enabled: boolean) => Promise<void>;
   
   refreshAccounts: () => void;
   refreshTransactions: () => void;
@@ -47,15 +51,27 @@ export const useStore = create<FinanceState>((set, get) => ({
   isAppLocked: false,
   hasPinSetup: false,
   isUnlockedSession: false,
+  pinLength: 4,
+  isBiometricEnabled: false,
 
   initializeSecurity: async () => {
     const isLocked = await SettingsService.isAppLocked();
     const hasPin = await SettingsService.hasPinSetup();
-    set({ isAppLocked: isLocked, hasPinSetup: hasPin });
+    const length = await SettingsService.getPinLength();
+    const biometric = await SettingsService.isBiometricEnabled();
+    set({ isAppLocked: isLocked, hasPinSetup: hasPin, pinLength: length, isBiometricEnabled: biometric });
   },
 
-  unlockSession: async (pin: string) => {
-    const isValid = await SettingsService.verifyPin(pin);
+  unlockSession: async (pin?: string) => {
+    let isValid = false;
+    
+    if (pin !== undefined) {
+      isValid = await SettingsService.verifyPin(pin);
+    } else {
+      // Biometric unlock
+      isValid = true;
+    }
+
     if (isValid) {
       set({ isUnlockedSession: true });
     }
@@ -66,12 +82,24 @@ export const useStore = create<FinanceState>((set, get) => ({
     if (pin) {
       await SettingsService.setPin(pin);
       await SettingsService.setAppLocked(true);
-      set({ isAppLocked: true, hasPinSetup: true });
+      set({ isAppLocked: true, hasPinSetup: true, pinLength: pin.length });
     } else {
       await SettingsService.removePin();
       await SettingsService.setAppLocked(false);
       set({ isAppLocked: false, hasPinSetup: false });
     }
+  },
+
+  resetAppLock: async () => {
+    await SettingsService.removePin();
+    await SettingsService.setAppLocked(false);
+    await SettingsService.setBiometricEnabled(false);
+    set({ isAppLocked: false, hasPinSetup: false, isUnlockedSession: true, isBiometricEnabled: false });
+  },
+
+  toggleBiometric: async (enabled: boolean) => {
+    await SettingsService.setBiometricEnabled(enabled);
+    set({ isBiometricEnabled: enabled });
   },
 
   refreshAccounts: () => {
