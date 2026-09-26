@@ -7,6 +7,7 @@ import { View, Text } from 'react-native';
 import { colors } from './src/theme/colors';
 import { useStore } from './src/store/useStore';
 import { PinLockScreen } from './src/features/settings/PinLockScreen';
+import { NotificationService } from './src/services/NotificationService';
 
 export default function App() {
   const [dbInitialized, setDbInitialized] = useState(false);
@@ -21,6 +22,7 @@ export default function App() {
         setDbInitialized(true);
         
         await initializeSecurity();
+        await NotificationService.requestPermissionsAsync();
         setSecurityChecked(true);
       } catch (e) {
         console.error(e);

@@ -88,6 +88,29 @@ export const DashboardScreen = () => {
     { month: 'Jun', income: 5000, expense: monthlyExpense > 0 ? monthlyExpense : 3200 }, // Demo data for now
   ];
 
+  // Find upcoming due credit cards
+  const creditCards = accounts.filter(a => a.type === 'CREDIT_CARD' && a.dueDate);
+  const upcomingBills = creditCards.map(card => {
+    if (!card.dueDate) return null;
+    const dueDate = new Date(card.dueDate);
+    const dueDay = dueDate.getDate();
+    
+    // Check next 15 days
+    // Assuming the due date is this month or next month
+    let nextDueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
+    if (nextDueDate.getTime() < now.getTime()) {
+      nextDueDate = new Date(now.getFullYear(), now.getMonth() + 1, dueDay);
+    }
+    
+    const diffTime = nextDueDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays <= 15) {
+      return { ...card, diffDays, dueDay };
+    }
+    return null;
+  }).filter(Boolean);
+
   const renderTransaction = (item: Transaction) => {
     const category = categories.find(c => c.id === item.categoryId);
     const account = accounts.find(a => a.id === item.accountId);
@@ -129,6 +152,26 @@ export const DashboardScreen = () => {
           <Ionicons name="settings-outline" size={20} color={colors.white} />
         </TouchableOpacity>
       </View>
+
+      {upcomingBills.length > 0 && (
+        <View style={styles.bannerContainer}>
+          {upcomingBills.map((bill, index) => (
+            <GlassCard key={`bill-${index}`} style={styles.bannerCard}>
+              <View style={styles.bannerIconContainer}>
+                <Ionicons name="alert-circle" size={24} color="#F97316" />
+              </View>
+              <View style={styles.bannerContent}>
+                <Typography variant="body" style={{ color: colors.white, fontWeight: 'bold' }}>
+                  Bill Due Soon!
+                </Typography>
+                <Typography variant="caption" style={{ color: colors.textMuted, marginTop: 2 }}>
+                  Your {bill!.name} bill is due {bill!.diffDays === 0 ? 'today' : `in ${bill!.diffDays} days`} (on the {bill!.dueDay}th).
+                </Typography>
+              </View>
+            </GlassCard>
+          ))}
+        </View>
+      )}
 
       <GlassCard style={styles.balanceCard}>
         <Typography variant="caption" style={{ color: 'rgba(255,255,255,0.7)' }}>Total Net Worth</Typography>
@@ -304,6 +347,23 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     backgroundColor: 'rgba(99, 102, 241, 0.15)',
     borderColor: 'rgba(99, 102, 241, 0.3)',
+  },
+  bannerContainer: {
+    marginBottom: 24,
+  },
+  bannerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+    borderColor: 'rgba(249, 115, 22, 0.2)',
+    marginBottom: 8,
+  },
+  bannerIconContainer: {
+    marginRight: 16,
+  },
+  bannerContent: {
+    flex: 1,
   },
   monthlyStatsRow: {
     flexDirection: 'row',

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Account, Transaction, Category, Budget, Vault } from '../database/schema';
 import { AccountRepository, TransactionRepository, CategoryRepository, BudgetRepository, VaultRepository } from '../database';
 import { SettingsService } from '../services/SettingsService';
+import { NotificationService } from '../services/NotificationService';
 
 interface FinanceState {
   accounts: Account[];
@@ -106,6 +107,9 @@ export const useStore = create<FinanceState>((set, get) => ({
     const accounts = AccountRepository.getAll();
     const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
     set({ accounts, totalBalance });
+    
+    // Update push notifications for credit card due dates whenever accounts change
+    NotificationService.scheduleCreditCardReminders(accounts).catch(console.error);
   },
 
   refreshTransactions: () => {
