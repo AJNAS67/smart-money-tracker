@@ -8,6 +8,8 @@ export interface Account {
   balance: number;
   icon?: string;
   color?: string;
+  creditLimit?: number;
+  billPaymentDate?: number;
   createdAt: number;
   updatedAt: number;
 }
