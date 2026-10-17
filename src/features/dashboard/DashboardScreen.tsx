@@ -1,142 +1,165 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '../../store/useStore';
 import { Typography } from '../../components/common/Typography';
 import { GlassCard } from '../../components/glass/GlassCard';
 import { colors } from '../../theme/colors';
 import { Transaction } from '../../database/schema';
-import { PolarChart, Pie, CartesianChart, Bar } from 'victory-native';
+import { SavingsGoalsCarousel } from './components/SavingsGoalsCarousel';
+import { MonthExpenseSection } from './components/MonthExpenseSection';
 
 const { width } = Dimensions.get('window');
 
-// We will use standard React Native components for visual representation if Victory Native has peer dependency issues,
-// but for now let's build the layout and simple bar representations.
-
 export const DashboardScreen = () => {
-  const { totalBalance, transactions, categories, accounts, refreshAccounts, refreshTransactions, refreshCategories } = useStore();
-  const navigation = useNavigation<any>();
-  const [timeFilter, setTimeFilter] = useState<'WEEK' | 'MONTH' | 'YEAR' | 'ALL'>('MONTH');
-  const [dismissedBills, setDismissedBills] = useState<string[]>([]);
+  const {
+    totalBalance,
+    transactions,
+    categories,
+    accounts,
+    vaults,
+    refreshAccounts,
+    refreshTransactions,
+    refreshCategories,
+    refreshVaults,
+  } = useStore();
 
-  useEffect(() => {
-    refreshAccounts();
-    refreshTransactions();
-    refreshCategories();
-  }, []);
+  const navigation = useNavigation<any>();
+
+  // Active month state for monthly expense analytics
+  const [selectedMonthDate, setSelectedMonthDate] = useState<Date>(new Date());
+  const [dismissedBills, setDismissedBills] = useState<string[]>([]);
+  const [isBalanceHidden, setIsBalanceHidden] = useState<boolean>(false);
+
+  // Refresh all store datasets whenever this screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      refreshAccounts();
+      refreshTransactions();
+      refreshCategories();
+      refreshVaults();
+    }, [])
+  );
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
+      maximumFractionDigits: 0,
     }).format(Math.abs(amount));
   };
 
-  const recentTransactions = transactions.slice(0, 5);
-
   const now = new Date();
-  
-  const filteredTransactions = transactions.filter(t => {
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  // Current month's totals for the hero card
+  const currentMonthTransactions = transactions.filter((t) => {
     const d = new Date(t.date);
-    if (timeFilter === 'ALL') return true;
-    if (timeFilter === 'YEAR') return d.getFullYear() === now.getFullYear();
-    if (timeFilter === 'MONTH') return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    if (timeFilter === 'WEEK') {
-      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      return d >= oneWeekAgo && d <= now;
-    }
-    return true;
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
   });
 
-  const monthlyIncome = filteredTransactions
-    .filter(t => t.type === 'INCOME')
-    .reduce((sum, t) => sum + t.amount, 0);
-    
-  const monthlyExpense = filteredTransactions
-    .filter(t => t.type === 'EXPENSE')
+  const currentMonthIncome = currentMonthTransactions
+    .filter((t) => t.type === 'INCOME')
     .reduce((sum, t) => sum + t.amount, 0);
 
-  // Expense breakdown by category for the pie chart
-  const expenseByCategory = categories
-    .filter(c => c.type === 'EXPENSE')
-    .map(category => {
-      const amount = filteredTransactions
-        .filter(t => t.type === 'EXPENSE' && t.categoryId === category.id)
-        .reduce((sum, t) => sum + t.amount, 0);
-      return {
-        value: amount,
-        color: category.color || colors.primary,
-        label: category.name,
-      };
+  const currentMonthExpense = currentMonthTransactions
+    .filter((t) => t.type === 'EXPENSE')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const netSavings = currentMonthIncome - currentMonthExpense;
+  const savingsRate =
+    currentMonthIncome > 0
+      ? Math.max(Math.round((netSavings / currentMonthIncome) * 100), 0)
+      : 0;
+
+  // Recent transactions (last 5)
+  const recentTransactions = transactions.slice(0, 5);
+
+  // Upcoming due credit cards (due within 15 days)
+  const creditCards = accounts.filter((a) => a.type === 'CREDIT_CARD' && a.dueDate);
+  const upcomingBills = creditCards
+    .map((card) => {
+      if (!card.dueDate) return null;
+      const dueDate = new Date(card.dueDate);
+      const dueDay = dueDate.getDate();
+
+      let nextDueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
+      if (nextDueDate.getTime() < now.getTime()) {
+        nextDueDate = new Date(now.getFullYear(), now.getMonth() + 1, dueDay);
+      }
+
+      const diffTime = nextDueDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays <= 15 && !dismissedBills.includes(card.id)) {
+        return { ...card, diffDays, dueDay };
+      }
+      return null;
     })
-    .filter(item => item.value > 0);
-
-  // If no expenses, show a default gray ring
-  const pieData = expenseByCategory.length > 0 
-    ? expenseByCategory 
-    : [{ value: 1, color: 'rgba(255,255,255,0.1)', label: 'No Data' }];
-
-  // Income vs Expense for the last 6 months
-  // Note: Skia requires a custom .ttf font file for axis labels. Since we don't have one, we will render the chart without axis labels for now.
-  
-  const barData = [
-    { month: 'Jan', income: 4000, expense: 2500 },
-    { month: 'Feb', income: 4200, expense: 2100 },
-    { month: 'Mar', income: 4100, expense: 2800 },
-    { month: 'Apr', income: 4500, expense: 3100 },
-    { month: 'May', income: 4800, expense: 2900 },
-    { month: 'Jun', income: 5000, expense: monthlyExpense > 0 ? monthlyExpense : 3200 }, // Demo data for now
-  ];
-
-  // Find upcoming due credit cards
-  const creditCards = accounts.filter(a => a.type === 'CREDIT_CARD' && a.dueDate);
-  const upcomingBills = creditCards.map(card => {
-    if (!card.dueDate) return null;
-    const dueDate = new Date(card.dueDate);
-    const dueDay = dueDate.getDate();
-    
-    // Check next 15 days
-    // Assuming the due date is this month or next month
-    let nextDueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);
-    if (nextDueDate.getTime() < now.getTime()) {
-      nextDueDate = new Date(now.getFullYear(), now.getMonth() + 1, dueDay);
-    }
-    
-    const diffTime = nextDueDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays <= 15 && !dismissedBills.includes(card.id)) {
-      return { ...card, diffDays, dueDay };
-    }
-    return null;
-  }).filter(Boolean);
+    .filter(Boolean);
 
   const renderTransaction = (item: Transaction) => {
-    const category = categories.find(c => c.id === item.categoryId);
-    const account = accounts.find(a => a.id === item.accountId);
+    const category = categories.find((c) => c.id === item.categoryId);
+    const account = accounts.find((a) => a.id === item.accountId);
     const isIncome = item.type === 'INCOME';
+    const isTransfer = item.type === 'TRANSFER';
+
+    let itemColor = colors.danger;
+    let iconName = (category?.icon as any) || 'cash-outline';
+    let prefix = '-';
+
+    if (isIncome) {
+      itemColor = colors.success;
+      prefix = '+';
+      iconName = (category?.icon as any) || 'arrow-down-circle-outline';
+    } else if (isTransfer) {
+      itemColor = colors.info;
+      prefix = '';
+      iconName = 'swap-horizontal-outline';
+    }
 
     return (
       <View key={item.id} style={styles.transactionRow}>
-        <View style={[styles.iconContainer, { backgroundColor: category?.color || colors.primary }]}>
-          <Ionicons name={(category?.icon as any) || 'cash-outline'} size={20} color={colors.white} />
+        <View
+          style={[
+            styles.txIconContainer,
+            { backgroundColor: (category?.color || itemColor) + '20' },
+          ]}
+        >
+          <Ionicons
+            name={iconName}
+            size={20}
+            color={category?.color || itemColor}
+          />
         </View>
-        <View style={styles.infoContainer}>
-          <Typography variant="body" style={{ color: colors.text }}>
-            {category?.name || 'Uncategorized'}
+
+        <View style={styles.txInfoContainer}>
+          <Typography variant="body" color={colors.white} style={{ fontWeight: '600' }}>
+            {item.note || category?.name || (isTransfer ? 'Transfer' : 'Transaction')}
           </Typography>
           <Typography variant="caption" style={{ color: colors.textMuted }}>
-            {account?.name}
+            {account?.name || 'Account'} • {new Date(item.date).toLocaleDateString()}
           </Typography>
         </View>
-        <View style={styles.amountContainer}>
-          <Typography variant="body" style={{ color: isIncome ? colors.success : colors.white, fontWeight: 'bold' }}>
-            {isIncome ? '+' : '-'}{formatCurrency(item.amount)}
+
+        <View style={styles.txAmountContainer}>
+          <Typography
+            variant="body"
+            style={{
+              color: isIncome ? colors.success : colors.white,
+              fontWeight: '700',
+            }}
+          >
+            {prefix}
+            {formatCurrency(item.amount)}
           </Typography>
-          <Typography variant="caption" style={{ color: colors.textMuted }}>
-            {new Date(item.date).toLocaleDateString()}
-          </Typography>
+          {category && (
+            <Typography variant="caption" style={{ color: colors.textMuted, fontSize: 11 }}>
+              {category.name}
+            </Typography>
+          )}
         </View>
       </View>
     );
@@ -144,20 +167,31 @@ export const DashboardScreen = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Top Header */}
       <View style={styles.header}>
         <View>
-          <Typography variant="caption" style={styles.greeting}>Welcome back,</Typography>
-          <Typography variant="h2" color={colors.white}>MoneyFlow</Typography>
+          <Typography variant="caption" style={styles.greeting}>
+            Welcome back,
+          </Typography>
+          <Typography variant="h2" color={colors.white}>
+            MoneyFlow
+          </Typography>
         </View>
-        <TouchableOpacity style={styles.profileBtn} onPress={() => navigation.navigate('Settings')}>
+
+        <TouchableOpacity
+          style={styles.profileBtn}
+          onPress={() => navigation.navigate('Settings')}
+          activeOpacity={0.8}
+        >
           <Ionicons name="settings-outline" size={20} color={colors.white} />
         </TouchableOpacity>
       </View>
 
+      {/* Upcoming Bill Alerts */}
       {upcomingBills.length > 0 && (
         <View style={styles.bannerContainer}>
           {upcomingBills.map((bill, index) => (
-            <GlassCard key={`bill-${index}`} style={styles.bannerCard}>
+            <GlassCard key={`bill-${index}`} style={styles.bannerCard} contentStyle={styles.bannerContentStyle}>
               <View style={styles.bannerIconContainer}>
                 <Ionicons name="alert-circle" size={24} color="#F97316" />
               </View>
@@ -169,7 +203,10 @@ export const DashboardScreen = () => {
                   Your {bill!.name} bill is due {bill!.diffDays === 0 ? 'today' : `in ${bill!.diffDays} days`} (on the {bill!.dueDay}th).
                 </Typography>
               </View>
-              <TouchableOpacity onPress={() => setDismissedBills([...dismissedBills, bill!.id])} style={{ padding: 4 }}>
+              <TouchableOpacity
+                onPress={() => setDismissedBills([...dismissedBills, bill!.id])}
+                style={{ padding: 4 }}
+              >
                 <Ionicons name="close" size={20} color={colors.textMuted} />
               </TouchableOpacity>
             </GlassCard>
@@ -177,144 +214,179 @@ export const DashboardScreen = () => {
         </View>
       )}
 
-      <GlassCard style={styles.balanceCard}>
-        <Typography variant="caption" style={{ color: 'rgba(255,255,255,0.7)' }}>Total Net Worth</Typography>
-        <Typography variant="h1" color={colors.white} style={{ marginVertical: 8 }}>{formatCurrency(totalBalance)}</Typography>
-        
+      {/* Hero Card: Total Balance & Monthly Expense Flow */}
+      <GlassCard style={styles.balanceCard} contentStyle={styles.balanceCardContent}>
+        {/* Net Worth Row with Privacy Eye Toggle */}
+        <View style={styles.netWorthHeader}>
+          <Typography variant="caption" style={styles.balanceLabel}>
+            TOTAL NET WORTH
+          </Typography>
+          <TouchableOpacity
+            onPress={() => setIsBalanceHidden(!isBalanceHidden)}
+            style={styles.eyeBtn}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons
+              name={isBalanceHidden ? 'eye-off-outline' : 'eye-outline'}
+              size={18}
+              color="rgba(255,255,255,0.7)"
+            />
+          </TouchableOpacity>
+        </View>
+
+        <Typography variant="h1" color={colors.white} style={styles.totalBalanceAmount}>
+          {isBalanceHidden ? '••••••••' : formatCurrency(totalBalance)}
+        </Typography>
+
+        {/* Monthly Performance Split */}
         <View style={styles.monthlyStatsRow}>
-          <View style={styles.monthlyStat}>
-            <View style={styles.statIconIncome}>
-              <Ionicons name="arrow-down" size={16} color={colors.success} />
-            </View>
-            <View>
-              <Typography variant="caption" style={{ color: 'rgba(255,255,255,0.7)' }}>Income</Typography>
-              <Typography variant="body" style={{ color: colors.success }}>{formatCurrency(monthlyIncome)}</Typography>
-            </View>
-          </View>
-          <View style={styles.monthlyStat}>
+          {/* Monthly Expense */}
+          <View style={styles.monthlyStatItem}>
             <View style={styles.statIconExpense}>
               <Ionicons name="arrow-up" size={16} color={colors.danger} />
             </View>
             <View>
-              <Typography variant="caption" style={{ color: 'rgba(255,255,255,0.7)' }}>Expense</Typography>
-              <Typography variant="body" style={{ color: colors.danger }}>{formatCurrency(monthlyExpense)}</Typography>
-            </View>
-          </View>
-        </View>
-      </GlassCard>
-
-      <View style={styles.sectionHeader}>
-        <Typography variant="h3" color={colors.white}>Expense Breakdown</Typography>
-      </View>
-
-      <GlassCard style={styles.chartCard}>
-        <View style={styles.filterTabs}>
-          {(['WEEK', 'MONTH', 'YEAR', 'ALL'] as const).map(filter => (
-            <TouchableOpacity
-              key={filter}
-              style={[styles.filterTab, timeFilter === filter && styles.filterTabActive]}
-              onPress={() => setTimeFilter(filter)}
-            >
-              <Typography 
-                variant="caption" 
-                style={{ color: timeFilter === filter ? colors.white : colors.textMuted, fontWeight: timeFilter === filter ? 'bold' : 'normal' }}
-              >
-                {filter === 'ALL' ? 'ALL TIME' : filter}
+              <Typography variant="caption" style={styles.statLabel}>
+                This Month Spent
               </Typography>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <View style={styles.chartContainer}>
-          <PolarChart
-            data={pieData}
-            colorKey={"color"}
-            valueKey={"value"}
-            labelKey={"label"}
-          >
-            <Pie.Chart innerRadius={50} />
-          </PolarChart>
-        </View>
-        <View style={styles.legendContainer}>
-          {expenseByCategory.map((item, index) => (
-            <View key={index} style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: item.color }]} />
-              <Typography variant="caption" style={{ color: colors.textMuted, flex: 1 }}>{item.label}</Typography>
-              <Typography variant="caption" style={{ color: colors.text }}>{formatCurrency(item.value)}</Typography>
+              <Typography variant="subtitle" style={{ color: colors.danger, fontWeight: '700' }}>
+                {isBalanceHidden ? '••••' : formatCurrency(currentMonthExpense)}
+              </Typography>
             </View>
-          ))}
-          {expenseByCategory.length === 0 && (
-             <Typography variant="caption" style={{ color: colors.textMuted, textAlign: 'center' }}>
-               {`No expenses for this ${timeFilter.toLowerCase()}`}
-             </Typography>
-          )}
+          </View>
+
+          {/* Monthly Income */}
+          <View style={styles.monthlyStatItem}>
+            <View style={styles.statIconIncome}>
+              <Ionicons name="arrow-down" size={16} color={colors.success} />
+            </View>
+            <View>
+              <Typography variant="caption" style={styles.statLabel}>
+                This Month Income
+              </Typography>
+              <Typography variant="subtitle" style={{ color: colors.success, fontWeight: '700' }}>
+                {isBalanceHidden ? '••••' : formatCurrency(currentMonthIncome)}
+              </Typography>
+            </View>
+          </View>
         </View>
-      </GlassCard>
 
-      <View style={styles.sectionHeader}>
-        <Typography variant="h3" color={colors.white}>Income vs Expense</Typography>
-      </View>
+        {/* Savings Rate Badge */}
+        {currentMonthIncome > 0 && (
+          <View style={styles.savingsRateRow}>
+            <View style={styles.savingsRateBadge}>
+              <Ionicons name="sparkles" size={12} color={colors.accent} style={{ marginRight: 4 }} />
+              <Typography variant="caption" style={{ color: colors.accent, fontWeight: '700' }}>
+                {savingsRate}% Savings Rate ({formatCurrency(netSavings)} saved)
+              </Typography>
+            </View>
+          </View>
+        )}
 
-      <GlassCard style={styles.chartCard}>
-        <View style={styles.barChartContainer}>
-          <CartesianChart
-            data={barData}
-            xKey="month"
-            yKeys={["income", "expense"]}
-            domainPadding={{ left: 20, right: 20 }}
-            axisOptions={{
-              tickCount: 4,
-              lineColor: 'rgba(255,255,255,0.1)',
-            }}
+        {/* Quick Actions Bar */}
+        <View style={styles.quickActionsBar}>
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => navigation.navigate('AddTransaction')}
+            activeOpacity={0.8}
           >
-            {({ points, chartBounds }) => (
-              <>
-                <Bar
-                  points={points.income}
-                  chartBounds={chartBounds}
-                  color={colors.success}
-                  barWidth={12}
-                />
-                <Bar
-                  points={points.expense}
-                  chartBounds={chartBounds}
-                  color={colors.danger}
-                  barWidth={12}
-                />
-              </>
-            )}
-          </CartesianChart>
-        </View>
-        <View style={[styles.legendContainer, { flexDirection: 'row', justifyContent: 'center', marginTop: 16 }]}>
-          <View style={[styles.legendItem, { marginRight: 24, marginBottom: 0 }]}>
-            <View style={[styles.legendDot, { backgroundColor: colors.success }]} />
-            <Typography variant="caption" style={{ color: colors.textMuted }}>Income</Typography>
-          </View>
-          <View style={[styles.legendItem, { marginBottom: 0 }]}>
-            <View style={[styles.legendDot, { backgroundColor: colors.danger }]} />
-            <Typography variant="caption" style={{ color: colors.textMuted }}>Expense</Typography>
-          </View>
+            <View style={[styles.quickActionIcon, { backgroundColor: 'rgba(239, 68, 68, 0.2)' }]}>
+              <Ionicons name="add" size={18} color={colors.danger} />
+            </View>
+            <Typography variant="caption" style={styles.quickActionText}>
+              Expense
+            </Typography>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => navigation.navigate('AddTransaction')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: 'rgba(34, 197, 94, 0.2)' }]}>
+              <Ionicons name="arrow-down" size={18} color={colors.success} />
+            </View>
+            <Typography variant="caption" style={styles.quickActionText}>
+              Income
+            </Typography>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => navigation.navigate('AddVault')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: 'rgba(0, 212, 170, 0.2)' }]}>
+              <Ionicons name="lock-closed" size={16} color={colors.accent} />
+            </View>
+            <Typography variant="caption" style={styles.quickActionText}>
+              New Goal
+            </Typography>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.quickActionBtn}
+            onPress={() => navigation.navigate('Accounts')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: 'rgba(91, 141, 239, 0.2)' }]}>
+              <Ionicons name="card" size={16} color={colors.primary} />
+            </View>
+            <Typography variant="caption" style={styles.quickActionText}>
+              Accounts
+            </Typography>
+          </TouchableOpacity>
         </View>
       </GlassCard>
 
+      {/* Savings Goals Carousel ("if have add money to vault then goals, if multiple the one card slice like each add") */}
+      <SavingsGoalsCarousel
+        vaults={vaults}
+        onAddFunds={(vaultId) => navigation.navigate('AddFunds', { vaultId })}
+        onCreateVault={() => navigation.navigate('AddVault')}
+        onViewAllVaults={() => navigation.navigate('Vaults')}
+        formatCurrency={formatCurrency}
+      />
+
+      {/* Month-Based Expense Analytics ("and month based expence show it is better") */}
+      <MonthExpenseSection
+        selectedDate={selectedMonthDate}
+        onSelectDate={setSelectedMonthDate}
+        transactions={transactions}
+        categories={categories}
+        formatCurrency={formatCurrency}
+      />
+
+      {/* Recent Transactions Feed */}
       <View style={styles.sectionHeader}>
-        <Typography variant="h3" color={colors.white}>Recent Transactions</Typography>
-        <TouchableOpacity onPress={() => navigation.navigate('Transactions')}>
-          <Typography variant="body" color={colors.primary}>See All</Typography>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Ionicons name="time-outline" size={18} color={colors.primary} style={{ marginRight: 6 }} />
+          <Typography variant="h3" color={colors.white}>
+            Recent Transactions
+          </Typography>
+        </View>
+
+        <TouchableOpacity onPress={() => navigation.navigate('Transactions')} activeOpacity={0.7}>
+          <Typography variant="body" color={colors.primary} style={{ fontWeight: '600' }}>
+            See All
+          </Typography>
         </TouchableOpacity>
       </View>
 
-      <GlassCard style={styles.transactionsCard}>
+      <GlassCard style={styles.transactionsCard} contentStyle={styles.transactionsCardContent}>
         {recentTransactions.length > 0 ? (
           recentTransactions.map(renderTransaction)
         ) : (
           <View style={styles.emptyState}>
-            <Typography variant="body" style={{ color: colors.textMuted }}>No transactions yet</Typography>
+            <Ionicons name="receipt-outline" size={36} color={colors.textMuted} />
+            <Typography variant="body" style={{ color: colors.textMuted, marginTop: 8 }}>
+              No transactions yet
+            </Typography>
           </View>
         )}
       </GlassCard>
-      
-      <View style={styles.spacer} />
+
+      <View style={styles.bottomSpacer} />
     </ScrollView>
   );
 };
@@ -325,159 +397,193 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    padding: 24,
-    paddingTop: 60,
+    padding: 20,
+    paddingTop: 56,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
   },
   greeting: {
     color: colors.textMuted,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   profileBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.1)',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  balanceCard: {
-    padding: 24,
-    marginBottom: 32,
-    backgroundColor: 'rgba(99, 102, 241, 0.15)',
-    borderColor: 'rgba(99, 102, 241, 0.3)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.12)',
   },
   bannerContainer: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   bannerCard: {
+    backgroundColor: 'rgba(249, 115, 22, 0.1)',
+    borderColor: 'rgba(249, 115, 22, 0.25)',
+    marginBottom: 8,
+    borderRadius: 16,
+  },
+  bannerContentStyle: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: 'rgba(249, 115, 22, 0.1)',
-    borderColor: 'rgba(249, 115, 22, 0.2)',
-    marginBottom: 8,
+    padding: 14,
   },
   bannerIconContainer: {
-    marginRight: 16,
+    marginRight: 12,
   },
   bannerContent: {
     flex: 1,
   },
+  balanceCard: {
+    marginBottom: 26,
+    backgroundColor: 'rgba(99, 102, 241, 0.14)',
+    borderColor: 'rgba(99, 102, 241, 0.35)',
+    borderRadius: 24,
+  },
+  balanceCardContent: {
+    padding: 20,
+  },
+  netWorthHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  balanceLabel: {
+    color: 'rgba(255, 255, 255, 0.65)',
+    letterSpacing: 1,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  eyeBtn: {
+    padding: 4,
+  },
+  totalBalanceAmount: {
+    marginVertical: 10,
+    fontWeight: '800',
+    fontSize: 34,
+    lineHeight: 42,
+  },
   monthlyStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
-    paddingTop: 16,
+    marginTop: 8,
+    paddingTop: 14,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.1)',
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
-  monthlyStat: {
+  monthlyStatItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+  },
+  statLabel: {
+    color: 'rgba(255, 255, 255, 0.65)',
+    fontSize: 11,
   },
   statIconIncome: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    backgroundColor: 'rgba(34, 197, 94, 0.18)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   statIconExpense: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    backgroundColor: 'rgba(239, 68, 68, 0.18)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 10,
+  },
+  savingsRateRow: {
+    marginTop: 12,
+  },
+  savingsRateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0, 212, 170, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 212, 170, 0.25)',
+  },
+  quickActionsBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  quickActionBtn: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  quickActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  quickActionText: {
+    color: colors.white,
+    fontWeight: '600',
+    fontSize: 11,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
   transactionsCard: {
-    padding: 16,
+    backgroundColor: 'rgba(30, 41, 59, 0.65)',
+    borderRadius: 20,
+    marginBottom: 16,
+  },
+  transactionsCardContent: {
+    padding: 14,
   },
   transactionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.05)',
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
   },
-  iconContainer: {
+  txIconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 12,
   },
-  infoContainer: {
+  txInfoContainer: {
     flex: 1,
   },
-  amountContainer: {
+  txAmountContainer: {
     alignItems: 'flex-end',
   },
   emptyState: {
     padding: 24,
     alignItems: 'center',
   },
-  chartCard: {
-    padding: 16,
-    marginBottom: 32,
-  },
-  chartContainer: {
-    height: 200,
-    width: '100%',
-    marginBottom: 16,
-  },
-  filterTabs: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 8,
-    padding: 4,
-    marginBottom: 16,
-  },
-  filterTab: {
-    flex: 1,
-    paddingVertical: 6,
-    alignItems: 'center',
-    borderRadius: 6,
-  },
-  filterTabActive: {
-    backgroundColor: 'rgba(255,255,255,0.15)',
-  },
-  barChartContainer: {
-    height: 220,
-    width: '100%',
-    marginBottom: 8,
-  },
-  legendContainer: {
-    paddingHorizontal: 8,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
-  },
-  spacer: {
-    height: 40,
+  bottomSpacer: {
+    height: 60,
   },
 });

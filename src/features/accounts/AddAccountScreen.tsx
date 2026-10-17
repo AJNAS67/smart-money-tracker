@@ -394,7 +394,7 @@ export const AddAccountScreen = () => {
         name="customType"
         render={({ field: { onChange, value } }) => {
           const selectedType = watch('type');
-          if (selectedType !== 'OTHER') return null;
+          if (selectedType !== 'OTHER') return <></>;
           
           return (
             <View>

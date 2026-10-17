@@ -12,12 +12,12 @@ interface GlassCardProps extends ViewProps {
 export const GlassCard: React.FC<GlassCardProps> = ({ children, intensity = 20, style, contentStyle, ...props }) => {
   return (
     <View style={[styles.container, style]} {...props}>
-      <BlurView intensity={intensity} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <BlurView intensity={intensity} tint="dark" style={StyleSheet.absoluteFill} />
       <LinearGradient
         colors={['rgba(255,255,255,0.15)', 'rgba(255,255,255,0.02)']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
-        style={StyleSheet.absoluteFillObject}
+        style={StyleSheet.absoluteFill}
       />
       <View style={[styles.content, contentStyle]}>
         {children}
