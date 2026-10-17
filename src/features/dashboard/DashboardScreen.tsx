@@ -9,6 +9,7 @@ import { colors } from '../../theme/colors';
 import { Transaction } from '../../database/schema';
 import { SavingsGoalsCarousel } from './components/SavingsGoalsCarousel';
 import { MonthExpenseSection } from './components/MonthExpenseSection';
+import { ExpensePieChartSection } from './components/ExpensePieChartSection';
 
 const { width } = Dimensions.get('window');
 
@@ -345,6 +346,13 @@ export const DashboardScreen = () => {
         onAddFunds={(vaultId) => navigation.navigate('AddFunds', { vaultId })}
         onCreateVault={() => navigation.navigate('AddVault')}
         onViewAllVaults={() => navigation.navigate('Vaults')}
+        formatCurrency={formatCurrency}
+      />
+
+      {/* Expense Breakdown Pie/Donut Chart (Week, Month, Year, All) */}
+      <ExpensePieChartSection
+        transactions={transactions}
+        categories={categories}
         formatCurrency={formatCurrency}
       />
 
